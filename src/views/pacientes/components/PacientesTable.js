@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { UserRoundX, UserRoundPen } from 'lucide-react'
 import Swal from 'sweetalert2'
-import PacienteModal from './PacientesModal'
+import PacienteTimelineModal from './PacienteTimelineModal'
 import {
   CCard,
   CCardHeader,
@@ -102,6 +102,13 @@ const PacientesTable = ({ apiEndpoint }) => {
     }
     fetchPacientes()
   }, [apiEndpoint])
+
+  const handleCreate = ({ client, user }) => {
+    // Aquí envías a tu API:
+    // POST /pacientes con client, luego POST /usuarios con user y relacionas ambos
+    console.log('Cliente:', client)
+    console.log('Usuario:', user)
+  }
 
   // Función de eliminar
   const handleDelete = async (id) => {
@@ -261,7 +268,11 @@ const PacientesTable = ({ apiEndpoint }) => {
           </div>
         </CCardBody>
       </CCard>
-      <PacienteModal visible={modalVisible} setVisible={setModalVisible} />
+      <PacienteTimelineModal
+        visible={modalVisible}
+        setVisible={setModalVisible}
+        onSubmit={handleCreate}
+      />
     </>
   )
 }
