@@ -1,12 +1,11 @@
-// src/components/ModalPaciente.jsx
-import React from 'react'
 import {
   CModal,
-  CModalBody,
   CModalHeader,
   CModalTitle,
+  CModalBody,
   CModalFooter,
   CForm,
+  CCol,
   CFormInput,
   CFormLabel,
   CInputGroup,
@@ -15,21 +14,26 @@ import {
   CFormCheck,
   CFormFeedback,
   CButton,
-  CCol,
 } from '@coreui/react'
 
-const ModalPaciente = ({ visible, onClose }) => {
+const PacienteModal = ({ visible, setVisible }) => {
   return (
-    <CModal size="xl" visible={visible} onClose={onClose} aria-labelledby="modalPacienteTitle">
+    <CModal
+      size="xl"
+      visible={visible}
+      onClose={() => setVisible(false)}
+      aria-labelledby="PacienteModalTitle"
+    >
       <CModalHeader>
-        <CModalTitle id="modalPacienteTitle">Extra large modal</CModalTitle>
+        <CModalTitle id="PacienteModalTitle">Registrar paciente</CModalTitle>
       </CModalHeader>
-      <CForm className="row g-3">
-        <CModalBody>
+
+      <CModalBody>
+        <CForm className="row g-3">
           <CCol md={4}>
             <CFormInput
-              type="text"
-              id="validationServer01"
+              type="email"
+              id="email"
               label="Email"
               feedback="Looks good!"
               defaultValue="name@surname.com"
@@ -39,9 +43,9 @@ const ModalPaciente = ({ visible, onClose }) => {
           </CCol>
           <CCol md={4}>
             <CFormInput
-              type="text"
-              id="validationServer02"
-              label="Repeat email"
+              type="email"
+              id="repeatEmail"
+              label="Repetir Email"
               feedback="Looks good!"
               defaultValue="name@surname.com"
               valid
@@ -49,14 +53,15 @@ const ModalPaciente = ({ visible, onClose }) => {
             />
           </CCol>
           <CCol md={4}>
-            <CFormLabel htmlFor="validationServerUsername">Username</CFormLabel>
+            <CFormLabel htmlFor="username">Username</CFormLabel>
             <CInputGroup className="has-validation">
-              <CInputGroupText id="inputGroupPrepend03">@</CInputGroupText>
+              <CInputGroupText id="inputGroupPrepend">@</CInputGroupText>
               <CFormInput
                 type="text"
-                id="validationServerUsername"
+                id="username"
                 feedback="Please choose a username."
-                aria-describedby="inputGroupPrepend03"
+                defaultValue=""
+                aria-describedby="inputGroupPrepend"
                 invalid
                 required
               />
@@ -65,20 +70,15 @@ const ModalPaciente = ({ visible, onClose }) => {
           <CCol md={6}>
             <CFormInput
               type="text"
-              id="validationServer03"
-              label="City"
+              id="city"
+              label="Ciudad"
               feedback="Please provide a valid city."
               invalid
               required
             />
           </CCol>
           <CCol md={3}>
-            <CFormSelect
-              id="validationServer04"
-              label="State"
-              feedback="Please provide a valid city."
-              invalid
-            >
+            <CFormSelect id="state" label="Estado" feedback="Please provide a valid city." invalid>
               <option disabled>Choose...</option>
               <option>...</option>
             </CFormSelect>
@@ -86,8 +86,8 @@ const ModalPaciente = ({ visible, onClose }) => {
           <CCol md={3}>
             <CFormInput
               type="text"
-              id="validationServer05"
-              label="Zip"
+              id="zip"
+              label="Código Postal"
               feedback="Please provide a valid zip."
               invalid
               required
@@ -96,25 +96,29 @@ const ModalPaciente = ({ visible, onClose }) => {
           <CCol xs={12}>
             <CFormCheck
               type="checkbox"
-              id="invalidCheck"
-              label="Agree to terms and conditions"
+              id="terms"
+              label="Aceptar términos y condiciones"
               invalid
               required
             />
-            <CFormFeedback invalid>You must agree before submitting.</CFormFeedback>
+            <CFormFeedback invalid>Debes aceptar antes de enviar.</CFormFeedback>
           </CCol>
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={onClose}>
-            Cancelar
-          </CButton>
-          <CButton color="primary" type="submit">
-            Submit form
-          </CButton>
-        </CModalFooter>
-      </CForm>
+          <CCol xs={12}>
+            <CButton color="primary" type="submit">
+              Enviar formulario
+            </CButton>
+          </CCol>
+        </CForm>
+      </CModalBody>
+
+      <CModalFooter>
+        <CButton color="secondary" onClick={() => setVisible(false)}>
+          Cancelar
+        </CButton>
+        <CButton color="primary">Guardar</CButton>
+      </CModalFooter>
     </CModal>
   )
 }
 
-export default ModalPaciente
+export default PacienteModal
