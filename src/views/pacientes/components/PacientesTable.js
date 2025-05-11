@@ -1,5 +1,7 @@
-// src/components/PacientesTable.jsx
 import React, { useEffect, useState } from 'react'
+import { UserRoundX, UserRoundPen } from 'lucide-react'
+import Swal from 'sweetalert2'
+import PacienteModal from './PacientesModal'
 import {
   CCard,
   CCardHeader,
@@ -23,7 +25,6 @@ import {
   getPaginationRowModel,
   flexRender,
 } from '@tanstack/react-table'
-import PacienteModal from './PacientesModal'
 
 // columnas de la tabla :: acessorKey es el nombre de la propiedad en el Json
 const columns = [
@@ -56,18 +57,23 @@ const columns = [
   {
     id: 'actions',
     header: 'Acciones',
-    cell: ({ row }) => (
+    cell: ({ row, table }) => (
       <>
         <CButton
           size="sm"
           color="info"
-          className="me-2"
+          className="me-2 text-light rounded-pill"
           onClick={() => console.log('Editar', row.original._id)}
         >
-          Editar
+          <UserRoundPen />
         </CButton>
-        <CButton size="sm" color="danger" onClick={() => console.log('Eliminar', row.original._id)}>
-          Eliminar
+        <CButton
+          size="sm"
+          color="danger"
+          className="text-light rounded-pill"
+          onClick={() => table.options.meta.handleDelete(row.original._id)}
+        >
+          <UserRoundX />
         </CButton>
       </>
     ),
@@ -97,10 +103,38 @@ const PacientesTable = ({ apiEndpoint }) => {
     fetchPacientes()
   }, [apiEndpoint])
 
+  // Función de eliminar
+  const handleDelete = async (id) => {
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'Esta acción eliminará al paciente permanentemente.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    })
+    if (result.isConfirmed) {
+      const apiEndpointDelete = apiEndpoint.replace('list', 'delet')
+      try {
+        const res = await fetch(`${apiEndpointDelete}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        })
+        if (!res.ok) throw new Error('Error al eliminar')
+        setData((prev) => prev.filter((p) => p._id !== id))
+        Swal.fire('Eliminado!', 'El paciente ha sido eliminado.', 'success')
+      } catch (err) {
+        Swal.fire('Error', `No se pudo eliminar: ${err.message}`, 'error')
+      }
+    }
+  }
+
   // Instancia de la tabla en modo no controlado
   const table = useReactTable({
     data,
     columns,
+    meta: { handleDelete },
     initialState: {
       pagination: { pageIndex: 0, pageSize: 5 },
       globalFilter: '',
