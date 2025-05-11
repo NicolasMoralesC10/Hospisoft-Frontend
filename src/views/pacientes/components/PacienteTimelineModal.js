@@ -11,21 +11,29 @@ import {
   CFormLabel,
   CFormInput,
   CFormFeedback,
+  CFormSelect,
   CRow,
   CCol,
 } from '@coreui/react'
-import { User, Lock } from 'lucide-react'
+import { User, Lock, Drill } from 'lucide-react'
 
 const initialClient = {
   nombre: '',
   documento: '',
   telefono: '',
-  email: '',
+  nacimiento: '',
+  eps: '',
+  estadoCivil: '',
+  sexo: '',
+  direccion: '',
+  status: 1,
 }
 const initialUser = {
   username: '',
+  emailUser: '',
   password: '',
   confirmPassword: '',
+  status: 1,
 }
 
 const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
@@ -39,7 +47,11 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
     if (!client.nombre) errs.nombre = 'Nombre es requerido'
     if (!client.documento) errs.documento = 'Documento es requerido'
     if (!client.telefono) errs.telefono = 'Teléfono es requerido'
-    if (!client.email) errs.email = 'Email es requerido'
+    if (!client.nacimiento) errs.nacimiento = 'Fecha de nacimiento es requerida'
+    if (!client.eps) errs.eps = 'EPS es requerido'
+    if (!client.estadoCivil) errs.estadoCivil = 'Estado civil es requerido'
+    if (!client.sexo) errs.sexo = 'Sexo es requerido'
+    if (!client.direccion) errs.direccion = 'Dirección es requerida'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -47,6 +59,7 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
   const validateStep2 = () => {
     const errs = {}
     if (!user.username) errs.username = 'Usuario es requerido'
+    if (!user.emailUser) errs.emailUser = 'Email es requerido'
     if (!user.password) errs.password = 'Contraseña es requerida'
     if (user.password !== user.confirmPassword)
       errs.confirmPassword = 'Las contraseñas no coinciden'
@@ -69,7 +82,7 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
   const handlePrev = () => setStep((s) => Math.max(1, s - 1))
 
   return (
-    <CModal visible={visible} onClose={() => setVisible(false)} size="lg">
+    <CModal visible={visible} onClose={() => setVisible(false)} size="xl">
       <CModalHeader className="bg-primary text-light">
         <CModalTitle>{step === 1 ? 'Registrar Paciente' : 'Crear Usuario'}</CModalTitle>
       </CModalHeader>
@@ -114,11 +127,17 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
           </div>
         </div>
         <div className="d-flex justify-content-between px-4 mb-4">
-          <div className="d-flex flex-column align-items-center" style={{ width: '48px', marginLeft: '21.5%' }}>
+          <div
+            className="d-flex flex-column align-items-center"
+            style={{ width: '48px', marginLeft: '21.5%' }}
+          >
             <small className={`${step >= 1 ? 'text-primary' : 'text-muted'}`}>Paciente</small>
           </div>
 
-          <div className="d-flex flex-column align-items-center" style={{ width: '48px', marginRight: '21.5%' }}>
+          <div
+            className="d-flex flex-column align-items-center"
+            style={{ width: '48px', marginRight: '21.5%' }}
+          >
             <small className={`${step >= 2 ? 'text-primary' : 'text-muted'}`}>Usuario</small>
           </div>
         </div>
@@ -126,76 +145,197 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
         <CForm className="px-4">
           {step === 1 && (
             <CRow>
-              <CCol md={6} className="mb-3">
+              <CCol md={4} className="mb-3">
                 <CFormLabel>Nombre completo</CFormLabel>
                 <CFormInput
                   value={client.nombre}
                   invalid={!!errors.nombre}
+                  valid={!errors.nombre && client.nombre}
                   onChange={(e) => setClient({ ...client, nombre: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.nombre}</CFormFeedback>
+                {errors.nombre ? (
+                  <CFormFeedback invalid>{errors.nombre}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
-              <CCol md={6} className="mb-3">
+              <CCol md={4} className="mb-3">
                 <CFormLabel>Documento</CFormLabel>
                 <CFormInput
                   value={client.documento}
                   invalid={!!errors.documento}
+                  valid={!errors.documento && client.documento}
                   onChange={(e) => setClient({ ...client, documento: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.documento}</CFormFeedback>
+                {errors.documento ? (
+                  <CFormFeedback invalid>{errors.documento}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
-              <CCol md={6} className="mb-3">
+              <CCol md={4} className="mb-3">
                 <CFormLabel>Teléfono</CFormLabel>
                 <CFormInput
                   value={client.telefono}
                   invalid={!!errors.telefono}
+                  valid={!errors.telefono && client.telefono}
                   onChange={(e) => setClient({ ...client, telefono: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.telefono}</CFormFeedback>
+                {errors.telefono ? (
+                  <CFormFeedback invalid>{errors.telefono}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
-              <CCol md={6} className="mb-3">
-                <CFormLabel>Email</CFormLabel>
+              <CCol md={5} className="mb-3">
+                <CFormLabel>Fecha de Nacimiento</CFormLabel>
                 <CFormInput
-                  type="email"
-                  value={client.email}
-                  invalid={!!errors.email}
-                  onChange={(e) => setClient({ ...client, email: e.target.value })}
+                  type="date"
+                  value={client.nacimiento}
+                  invalid={!!errors.nacimiento}
+                  valid={!errors.nacimiento && client.nacimiento}
+                  onChange={(e) => setClient({ ...client, nacimiento: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.email}</CFormFeedback>
+                {errors.nacimiento ? (
+                  <CFormFeedback invalid>{errors.nacimiento}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
+              </CCol>
+              <CCol md={3} className="mb-3">
+                <CFormLabel>EPS</CFormLabel>
+                <CFormInput
+                  value={client.eps}
+                  invalid={!!errors.eps}
+                  valid={!errors.eps && client.eps}
+                  onChange={(e) => setClient({ ...client, eps: e.target.value })}
+                />
+                {errors.eps ? (
+                  <CFormFeedback invalid>{errors.eps}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
+              </CCol>
+              <CCol md={4} className="mb-3">
+                <CFormLabel>Estado Civil</CFormLabel>
+                <CFormSelect
+                  value={client.estadoCivil}
+                  invalid={!!errors.estadoCivil}
+                  valid={!errors.estadoCivil && client.estadoCivil}
+                  onChange={(e) => setClient({ ...client, estadoCivil: e.target.value })}
+                >
+                  <option value="" disabled>
+                    Seleccione...
+                  </option>
+                  <option value="soltero">Soltero</option>
+                  <option value="casado">Casado</option>
+                  <option value="viudo">Viudo</option>
+                </CFormSelect>
+                {errors.estadoCivil ? (
+                  <CFormFeedback invalid>{errors.estadoCivil}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
+              </CCol>
+
+              <CCol xs={7} className="mb-3">
+                <CFormLabel>Dirección</CFormLabel>
+                <CFormInput
+                  value={client.direccion}
+                  invalid={!!errors.direccion}
+                  valid={!errors.direccion && client.direccion}
+                  onChange={(e) => setClient({ ...client, direccion: e.target.value })}
+                />
+                {errors.direccion ? (
+                  <CFormFeedback invalid>{errors.direccion}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
+              </CCol>
+              <CCol md={5} className="mb-3">
+                <CFormLabel>Sexo</CFormLabel>
+                <CFormSelect
+                  value={client.sexo}
+                  invalid={!!errors.sexo}
+                  valid={!errors.sexo && client.sexo}
+                  onChange={(e) => setClient({ ...client, sexo: e.target.value })}
+                >
+                  <option value="" disabled>
+                    Seleccione...
+                  </option>
+                  <option value="masculino">Masculino</option>
+                  <option value="femenino">Femenino</option>
+                  <option value="otro">Otro</option>
+                </CFormSelect>
+                {errors.sexo ? (
+                  <CFormFeedback invalid>{errors.sexo}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
             </CRow>
           )}
 
           {step === 2 && (
             <CRow>
-              <CCol md={6} className="mb-3">
+              <CCol md={5} className="mb-3">
                 <CFormLabel>Usuario</CFormLabel>
                 <CFormInput
                   value={user.username}
                   invalid={!!errors.username}
+                  valid={!errors.username && user.username}
                   onChange={(e) => setUser({ ...user, username: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.username}</CFormFeedback>
+                {errors.username ? (
+                  <CFormFeedback invalid>{errors.username}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
+              </CCol>
+              <CCol md={7} className="mb-3">
+                <CFormLabel>Email</CFormLabel>
+                <CFormInput
+                  type="email"
+                  value={user.emailUser}
+                  valid={!errors.emailUser && user.emailUser}
+                  invalid={!!errors.emailUser}
+                  onChange={(e) => setUser({ ...user, emailUser: e.target.value })}
+                />
+                {errors.emailUser ? (
+                  <CFormFeedback invalid>{errors.emailUser}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
               <CCol md={6} className="mb-3">
                 <CFormLabel>Contraseña</CFormLabel>
                 <CFormInput
                   type="password"
                   value={user.password}
+                  valid={!errors.password && user.password}
                   invalid={!!errors.password}
                   onChange={(e) => setUser({ ...user, password: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.password}</CFormFeedback>
+                {errors.password ? (
+                  <CFormFeedback invalid>{errors.password}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
               <CCol md={6} className="mb-3">
                 <CFormLabel>Confirmar Contraseña</CFormLabel>
                 <CFormInput
                   type="password"
                   value={user.confirmPassword}
+                  valid={!errors.confirmPassword && user.confirmPassword}
                   invalid={!!errors.confirmPassword}
                   onChange={(e) => setUser({ ...user, confirmPassword: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.confirmPassword}</CFormFeedback>
+                {errors.confirmPassword ? (
+                  <CFormFeedback invalid>{errors.confirmPassword}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
             </CRow>
           )}
@@ -207,6 +347,7 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
             Atrás
           </CButton>
         )}
+
         <CButton color="secondary" onClick={handleNext}>
           {step === 2 ? 'Guardar' : 'Siguiente'}
         </CButton>
