@@ -202,64 +202,63 @@ const PacientesTable = ({ apiEndpoint }) => {
             </select>
           </div>
 
-          {/* Mensaje cuando no hay resultados */}
-          {rows.length === 0 ? (
-            <CAlert color="info" className="text-center mt-5 mx-5">
-              {data.length === 0
-                ? 'No hay pacientes registrados.'
-                : 'No se encontraron pacientes que coincidan.'}
-            </CAlert>
-          ) : (
-            <>
-              {/* Tabla */}
-              <CTable hover striped bordered responsive>
-                <CTableHead>
-                  {getHeaderGroups().map((headerGroup) => (
-                    <CTableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <CTableHeaderCell
-                          key={header.id}
-                          onClick={header.column.getToggleSortingHandler()}
-                          style={{ cursor: header.column.getCanSort() ? 'pointer' : 'default' }}
-                        >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
-                          {header.column.getIsSorted() === 'asc'
-                            ? ' 🔼'
-                            : header.column.getIsSorted() === 'desc'
-                              ? ' 🔽'
-                              : ''}
-                        </CTableHeaderCell>
-                      ))}
-                    </CTableRow>
+          {/* Tabla */}
+          <CTable hover striped bordered responsive>
+            <CTableHead>
+              {getHeaderGroups().map((headerGroup) => (
+                <CTableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <CTableHeaderCell
+                      key={header.id}
+                      onClick={header.column.getToggleSortingHandler()}
+                      style={{ cursor: header.column.getCanSort() ? 'pointer' : 'default' }}
+                    >
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.column.getIsSorted() === 'asc'
+                        ? ' 🔼'
+                        : header.column.getIsSorted() === 'desc'
+                          ? ' 🔽'
+                          : ''}
+                    </CTableHeaderCell>
                   ))}
-                </CTableHead>
-                <CTableBody>
-                  {rows.map((row) => (
-                    <CTableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <CTableDataCell key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </CTableDataCell>
-                      ))}
-                    </CTableRow>
-                  ))}
-                </CTableBody>
-              </CTable>
+                </CTableRow>
+              ))}
+            </CTableHead>
+            <CTableBody>
+              {rows.length === 0 ? (
+                <CTableRow>
+                  <CTableDataCell colSpan={columns.length} className="text-center py-3">
+                    {data.length === 0
+                      ? 'No hay pacientes registrados.'
+                      : 'No se encontraron coincidencias.'}
+                  </CTableDataCell>
+                </CTableRow>
+              ) : (
+                rows.map((row) => (
+                  <CTableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <CTableDataCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </CTableDataCell>
+                    ))}
+                  </CTableRow>
+                ))
+              )}
+            </CTableBody>
+          </CTable>
 
-              {/* Controles de paginación */}
-              <div className="d-flex justify-content-between mt-2">
-                <CButton size="sm" onClick={previousPage} disabled={!getCanPreviousPage()}>
-                  Anterior
-                </CButton>
-                <span>
-                  Página {pageIndex + 1} de {Math.ceil(data.length / pageSize)}
-                </span>
-                <CButton size="sm" onClick={nextPage} disabled={!getCanNextPage()}>
-                  Siguiente
-                </CButton>
-              </div>
-            </>
-          )}
+          {/* Controles de paginación */}
+          <div className="d-flex justify-content-between mt-2">
+            <CButton size="sm" onClick={previousPage} disabled={!getCanPreviousPage()}>
+              Anterior
+            </CButton>
+            <span>
+              Página {pageIndex + 1} de {Math.ceil(data.length / pageSize)}
+            </span>
+            <CButton size="sm" onClick={nextPage} disabled={!getCanNextPage()}>
+              Siguiente
+            </CButton>
+          </div>
         </CCardBody>
       </CCard>
       <PacienteModal visible={modalVisible} setVisible={setModalVisible} />

@@ -19,12 +19,12 @@ import {
 const PacienteModal = ({ visible, setVisible }) => {
   return (
     <CModal
-      size="xl"
+      size="lg"
       visible={visible}
       onClose={() => setVisible(false)}
       aria-labelledby="PacienteModalTitle"
     >
-      <CModalHeader>
+      <CModalHeader className="bg-primary text-light">
         <CModalTitle id="PacienteModalTitle">Registrar paciente</CModalTitle>
       </CModalHeader>
 
@@ -93,29 +93,15 @@ const PacienteModal = ({ visible, setVisible }) => {
               required
             />
           </CCol>
-          <CCol xs={12}>
-            <CFormCheck
-              type="checkbox"
-              id="terms"
-              label="Aceptar términos y condiciones"
-              invalid
-              required
-            />
-            <CFormFeedback invalid>Debes aceptar antes de enviar.</CFormFeedback>
-          </CCol>
-          <CCol xs={12}>
-            <CButton color="primary" type="submit">
-              Enviar formulario
-            </CButton>
-          </CCol>
+       
         </CForm>
       </CModalBody>
 
-      <CModalFooter>
+      <CModalFooter className="bg-primary">
         <CButton color="secondary" onClick={() => setVisible(false)}>
           Cancelar
         </CButton>
-        <CButton color="primary">Guardar</CButton>
+        <CButton color="info text-light">Guardar</CButton>
       </CModalFooter>
     </CModal>
   )
