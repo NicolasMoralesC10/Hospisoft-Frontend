@@ -1,5 +1,6 @@
 // src/components/PacienteTimelineModal.jsx
 import React, { useState } from 'react'
+import Swal from 'sweetalert2'
 import {
   CModal,
   CModalHeader,
@@ -26,23 +27,36 @@ const initialClient = {
   estadoCivil: '',
   sexo: '',
   direccion: '',
-  status: 1,
 }
 const initialUser = {
-  username: '',
+  nombreUsuario: '',
   emailUser: '',
-  password: '',
+  passwordUser: '',
   confirmPassword: '',
-  status: 1,
+  rol: '',
 }
 
-const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
+const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint }) => {
   const [step, setStep] = useState(1)
   const [client, setClient] = useState(initialClient)
   const [user, setUser] = useState(initialUser)
   const [errors, setErrors] = useState({})
+  const [submitting, setSubmitting] = useState(false)
 
-  const validateStep1 = () => {
+  const validateUser = () => {
+    const errs = {}
+    if (!user.nombreUsuario) errs.nombreUsuario = 'Usuario es requerido'
+    if (!user.emailUser) errs.emailUser = 'Email es requerido'
+    if (!user.passwordUser) errs.passwordUser = 'Contraseña es requerida'
+    if (!user.confirmPassword) errs.confirmPassword = 'Confirmar contraseña es requerida'
+    else if (user.passwordUser !== user.confirmPassword)
+      errs.confirmPassword = 'Las contraseñas no coinciden'
+    if (!user.rol) errs.rol = 'Rol es requerido'
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const validateClient = () => {
     const errs = {}
     if (!client.nombre) errs.nombre = 'Nombre es requerido'
     if (!client.documento) errs.documento = 'Documento es requerido'
@@ -56,27 +70,66 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
     return Object.keys(errs).length === 0
   }
 
-  const validateStep2 = () => {
-    const errs = {}
-    if (!user.username) errs.username = 'Usuario es requerido'
-    if (!user.emailUser) errs.emailUser = 'Email es requerido'
-    if (!user.password) errs.password = 'Contraseña es requerida'
-    if (user.password !== user.confirmPassword)
-      errs.confirmPassword = 'Las contraseñas no coinciden'
-    setErrors(errs)
-    return Object.keys(errs).length === 0
-  }
+  const handleSubmit = async () => {
+    setSubmitting(true)
+    try {
+      const userRes = await fetch(`${apiEndpoint}user/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombreUsuario: user.nombreUsuario,
+          emailUser: user.emailUser,
+          passwordUser: user.passwordUser,
+          rol: user.rol,
+        }),
+      })
 
-  const handleNext = () => {
-    if (step === 1 && validateStep1()) setStep(2)
-    else if (step === 2 && validateStep2()) {
-      onSubmit({ client, user })
+      if (!userRes.ok) {
+        const msg = await userRes.text()
+        throw new Error(`Error al crear usuario: ${msg}`)
+      }
+
+      const userData = await userRes.json()
+      const idUsuario = userData._id || userData.id || (userData.data && userData.data._id)
+      if (!idUsuario) throw new Error('No se obtuvo idUsuario del servicio')
+
+      const clientPayload = { ...client, idUsuario }
+      const clientRes = await fetch(`${apiEndpoint}patient/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(clientPayload),
+      })
+
+      if (!clientRes.ok) {
+        const msg = await clientRes.text()
+        throw new Error(`Error al crear paciente: ${msg}`)
+      }
+
+      await clientRes.json()
+
+      Swal.fire('Éxito', 'Usuario y paciente creados correctamente', 'success')
       setVisible(false)
       setStep(1)
       setClient(initialClient)
       setUser(initialUser)
       setErrors({})
+    } catch (error) {
+      const mensaje = error.message || 'Error desconocido'
+      Swal.fire('Error', mensaje, 'error')
+
+      if (mensaje.includes('usuario')) {
+        setStep(1)
+      } else if (mensaje.includes('paciente')) {
+        setStep(2)
+      }
+    } finally {
+      setSubmitting(false)
     }
+  }
+
+  const handleNext = () => {
+    if (step === 1 && validateUser()) setStep(2)
+    else if (step === 2 && validateClient()) handleSubmit()
   }
 
   const handlePrev = () => setStep((s) => Math.max(1, s - 1))
@@ -84,7 +137,7 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
   return (
     <CModal visible={visible} onClose={() => setVisible(false)} size="xl">
       <CModalHeader className="bg-primary text-light">
-        <CModalTitle>{step === 1 ? 'Registrar Paciente' : 'Crear Usuario'}</CModalTitle>
+        <CModalTitle>{step === 1 ? 'Crear Usuario' : 'Registrar Paciente'}</CModalTitle>
       </CModalHeader>
       <CModalBody>
         <div className="d-flex align-items-center justify-content-between mb-1 px-4">
@@ -101,7 +154,7 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
               className={`d-flex align-items-center justify-content-center rounded-circle mx-2 ${step >= 1 ? 'bg-primary text-white' : 'bg-light text-muted'}`}
               style={{ width: '48px', height: '48px' }}
             >
-              <User size={24} />
+              <Lock size={24} />
             </div>
             <div
               style={{
@@ -114,7 +167,7 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
               className={`d-flex align-items-center justify-content-center rounded-circle mx-2 ${step >= 2 ? 'bg-primary text-white' : 'bg-light text-muted'}`}
               style={{ width: '48px', height: '48px' }}
             >
-              <Lock size={24} />
+              <User size={24} />
             </div>
             <div
               style={{
@@ -129,25 +182,90 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
         <div className="d-flex justify-content-between px-4 mb-4">
           <div
             className="d-flex flex-column align-items-center"
-            style={{ width: '48px', marginLeft: '21.5%' }}
+            style={{ width: '48px', marginLeft: '22.7%' }}
           >
-            <small className={`${step >= 1 ? 'text-primary' : 'text-muted'}`}>Paciente</small>
+            <small className={`${step >= 1 ? 'text-primary' : 'text-muted'}`}>Usuario</small>
           </div>
 
           <div
             className="d-flex flex-column align-items-center"
-            style={{ width: '48px', marginRight: '21.5%' }}
+            style={{ width: '48px', marginRight: '22.7%' }}
           >
-            <small className={`${step >= 2 ? 'text-primary' : 'text-muted'}`}>Usuario</small>
+            <small className={`${step >= 2 ? 'text-primary' : 'text-muted'}`}>Paciente</small>
           </div>
         </div>
 
         <CForm className="px-4">
           {step === 1 && (
             <CRow>
+              <CCol md={6} className="mb-3">
+                <CFormLabel>Usuario</CFormLabel>
+                <CFormInput
+                  value={user.nombreUsuario}
+                  invalid={!!errors.nombreUsuario}
+                  valid={!errors.nombreUsuario && user.nombreUsuario}
+                  onChange={(e) => setUser({ ...user, nombreUsuario: e.target.value })}
+                />
+                <CFormFeedback invalid>{errors.nombreUsuario}</CFormFeedback>
+              </CCol>
+              <CCol md={6} className="mb-3">
+                <CFormLabel>Email</CFormLabel>
+                <CFormInput
+                  type="email"
+                  value={user.emailUser}
+                  invalid={!!errors.emailUser}
+                  valid={!errors.emailUser && user.emailUser}
+                  onChange={(e) => setUser({ ...user, emailUser: e.target.value })}
+                />
+                <CFormFeedback invalid>{errors.emailUser}</CFormFeedback>
+              </CCol>
+              <CCol md={6} className="mb-3">
+                <CFormLabel>Contraseña</CFormLabel>
+                <CFormInput
+                  type="password"
+                  value={user.passwordUser}
+                  invalid={!!errors.passwordUser}
+                  valid={!errors.passwordUser && user.passwordUser}
+                  onChange={(e) => setUser({ ...user, passwordUser: e.target.value })}
+                />
+                <CFormFeedback invalid>{errors.passwordUser}</CFormFeedback>
+              </CCol>
+              <CCol md={6} className="mb-3">
+                <CFormLabel>Confirmar Contraseña</CFormLabel>
+                <CFormInput
+                  type="password"
+                  value={user.confirmPassword}
+                  invalid={!!errors.confirmPassword}
+                  valid={!errors.confirmPassword && user.confirmPassword}
+                  onChange={(e) => setUser({ ...user, confirmPassword: e.target.value })}
+                />
+                <CFormFeedback invalid>{errors.confirmPassword}</CFormFeedback>
+              </CCol>
+              <CCol md={6} className="mb-3">
+                <CFormLabel>Rol</CFormLabel>
+                <CFormSelect
+                  value={user.rol}
+                  invalid={!!errors.rol}
+                  valid={!errors.rol && user.rol}
+                  onChange={(e) => setUser({ ...user, rol: e.target.value })}
+                >
+                  <option value="" disabled>
+                    Seleccione rol...
+                  </option>
+                  <option value="admin">Admin</option>
+                  <option value="user">User</option>
+                </CFormSelect>
+                <CFormFeedback invalid>{errors.rol}</CFormFeedback>
+              </CCol>
+            </CRow>
+          )}
+
+          {step === 2 && (
+            <CRow>
               <CCol md={4} className="mb-3">
                 <CFormLabel>Nombre completo</CFormLabel>
                 <CFormInput
+                  type="text"
                   value={client.nombre}
                   invalid={!!errors.nombre}
                   valid={!errors.nombre && client.nombre}
@@ -162,6 +280,7 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
               <CCol md={4} className="mb-3">
                 <CFormLabel>Documento</CFormLabel>
                 <CFormInput
+                  type="number"
                   value={client.documento}
                   invalid={!!errors.documento}
                   valid={!errors.documento && client.documento}
@@ -275,70 +394,6 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
               </CCol>
             </CRow>
           )}
-
-          {step === 2 && (
-            <CRow>
-              <CCol md={5} className="mb-3">
-                <CFormLabel>Usuario</CFormLabel>
-                <CFormInput
-                  value={user.username}
-                  invalid={!!errors.username}
-                  valid={!errors.username && user.username}
-                  onChange={(e) => setUser({ ...user, username: e.target.value })}
-                />
-                {errors.username ? (
-                  <CFormFeedback invalid>{errors.username}</CFormFeedback>
-                ) : (
-                  <CFormFeedback valid>Correcto</CFormFeedback>
-                )}
-              </CCol>
-              <CCol md={7} className="mb-3">
-                <CFormLabel>Email</CFormLabel>
-                <CFormInput
-                  type="email"
-                  value={user.emailUser}
-                  valid={!errors.emailUser && user.emailUser}
-                  invalid={!!errors.emailUser}
-                  onChange={(e) => setUser({ ...user, emailUser: e.target.value })}
-                />
-                {errors.emailUser ? (
-                  <CFormFeedback invalid>{errors.emailUser}</CFormFeedback>
-                ) : (
-                  <CFormFeedback valid>Correcto</CFormFeedback>
-                )}
-              </CCol>
-              <CCol md={6} className="mb-3">
-                <CFormLabel>Contraseña</CFormLabel>
-                <CFormInput
-                  type="password"
-                  value={user.password}
-                  valid={!errors.password && user.password}
-                  invalid={!!errors.password}
-                  onChange={(e) => setUser({ ...user, password: e.target.value })}
-                />
-                {errors.password ? (
-                  <CFormFeedback invalid>{errors.password}</CFormFeedback>
-                ) : (
-                  <CFormFeedback valid>Correcto</CFormFeedback>
-                )}
-              </CCol>
-              <CCol md={6} className="mb-3">
-                <CFormLabel>Confirmar Contraseña</CFormLabel>
-                <CFormInput
-                  type="password"
-                  value={user.confirmPassword}
-                  valid={!errors.confirmPassword && user.confirmPassword}
-                  invalid={!!errors.confirmPassword}
-                  onChange={(e) => setUser({ ...user, confirmPassword: e.target.value })}
-                />
-                {errors.confirmPassword ? (
-                  <CFormFeedback invalid>{errors.confirmPassword}</CFormFeedback>
-                ) : (
-                  <CFormFeedback valid>Correcto</CFormFeedback>
-                )}
-              </CCol>
-            </CRow>
-          )}
         </CForm>
       </CModalBody>
       <CModalFooter className="bg-primary">
@@ -348,8 +403,8 @@ const PacienteTimelineModal = ({ visible, setVisible, onSubmit }) => {
           </CButton>
         )}
 
-        <CButton color="secondary" onClick={handleNext}>
-          {step === 2 ? 'Guardar' : 'Siguiente'}
+        <CButton color="secondary" onClick={handleNext} disabled={submitting}>
+          {submitting ? 'Procesando...' : step === 2 ? 'Guardar' : 'Siguiente'}
         </CButton>
       </CModalFooter>
     </CModal>

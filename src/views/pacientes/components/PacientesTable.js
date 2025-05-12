@@ -90,7 +90,7 @@ const PacientesTable = ({ apiEndpoint }) => {
   useEffect(() => {
     async function fetchPacientes() {
       try {
-        const res = await fetch(apiEndpoint)
+        const res = await fetch(apiEndpoint + 'patient/list')
         if (!res.ok) throw new Error(res.statusText)
         const json = await res.json()
         setData(json.data || [])
@@ -121,9 +121,8 @@ const PacientesTable = ({ apiEndpoint }) => {
       cancelButtonText: 'Cancelar',
     })
     if (result.isConfirmed) {
-      const apiEndpointDelete = apiEndpoint.replace('list', 'delet')
       try {
-        const res = await fetch(`${apiEndpointDelete}`, {
+        const res = await fetch(apiEndpoint + 'patient/delet', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id }),
@@ -271,7 +270,7 @@ const PacientesTable = ({ apiEndpoint }) => {
       <PacienteTimelineModal
         visible={modalVisible}
         setVisible={setModalVisible}
-        onSubmit={handleCreate}
+        apiEndpoint="http://127.0.0.1:3000/api/"
       />
     </>
   )
