@@ -15,7 +15,6 @@ import {
   CButton,
   CBadge,
   CSpinner,
-  CAlert,
 } from '@coreui/react'
 import {
   useReactTable,
@@ -265,6 +264,7 @@ const PacientesTable = ({ apiEndpoint }) => {
         visible={modalVisible}
         setVisible={setModalVisible}
         apiEndpoint="http://127.0.0.1:3000/api/"
+        onSuccess={fetchPacientes}
       />
     </>
   )

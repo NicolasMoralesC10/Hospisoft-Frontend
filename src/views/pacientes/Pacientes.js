@@ -1,7 +1,6 @@
-import { useEffect,useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CRow, CCol } from '@coreui/react'
 import PacienteTable from './components/PacientesTable'
-
 
 const VistaPacientes = () => {
   return (

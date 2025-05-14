@@ -39,7 +39,7 @@ const initialUser = {
   rol: '',
 }
 
-const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint }) => {
+const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint, onSuccess }) => {
   const [step, setStep] = useState(1)
   const [client, setClient] = useState(initialClient)
   const [user, setUser] = useState(initialUser)
@@ -81,7 +81,7 @@ const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint }) => {
       errs.passwordUser = 'Contraseña es requerida'
     } else if (user.passwordUser.length < 7) {
       errs.passwordUser = 'La contraseña debe tener al menos 7 caracteres'
-    } 
+    }
 
     if (!user.confirmPassword) errs.confirmPassword = 'Confirmar contraseña es requerida'
     else if (user.passwordUser !== user.confirmPassword)
@@ -158,6 +158,7 @@ const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint }) => {
         setStep(2)
       }
     } finally {
+      onSuccess && onSuccess()
       setSubmitting(false)
     }
   }
@@ -320,6 +321,7 @@ const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint }) => {
               <CCol md={4} className="mb-3">
                 <CFormLabel>Teléfono</CFormLabel>
                 <CFormInput
+                  type="number"
                   value={client.telefono}
                   invalid={!!errors.telefono}
                   valid={!errors.telefono && client.telefono}
