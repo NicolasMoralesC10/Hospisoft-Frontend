@@ -27,16 +27,19 @@
     "@coreui/react-chartjs": "^3.0.0",
     "@coreui/utils": "^2.0.2",
     "@popperjs/core": "^2.11.8",
+    "@tanstack/react-table": "^8.21.3",
     "chart.js": "^4.4.7",
     "classnames": "^2.5.1",
     "core-js": "^3.40.0",
+    "lucide-react": "^0.510.0",
     "prop-types": "^15.8.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.1.5",
     "redux": "5.0.1",
-    "simplebar-react": "^3.3.0"
+    "simplebar-react": "^3.3.0",
+    "sweetalert2": "^11.21.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
