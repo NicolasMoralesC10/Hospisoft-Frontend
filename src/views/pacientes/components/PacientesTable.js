@@ -86,29 +86,23 @@ const PacientesTable = ({ apiEndpoint }) => {
   const [error, setError] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
 
+  const fetchPacientes = async () => {
+    try {
+      const res = await fetch(apiEndpoint + 'patient/list')
+      if (!res.ok) throw new Error(res.statusText)
+      const json = await res.json()
+      setData(json.data || [])
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Fetch de datos
   useEffect(() => {
-    async function fetchPacientes() {
-      try {
-        const res = await fetch(apiEndpoint + 'patient/list')
-        if (!res.ok) throw new Error(res.statusText)
-        const json = await res.json()
-        setData(json.data || [])
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
     fetchPacientes()
   }, [apiEndpoint])
-
-  const handleCreate = ({ client, user }) => {
-    // Aquí envías a tu API:
-    // POST /pacientes con client, luego POST /usuarios con user y relacionas ambos
-    console.log('Cliente:', client)
-    console.log('Usuario:', user)
-  }
 
   // Función de eliminar
   const handleDelete = async (id) => {
@@ -128,7 +122,7 @@ const PacientesTable = ({ apiEndpoint }) => {
           body: JSON.stringify({ id }),
         })
         if (!res.ok) throw new Error('Error al eliminar')
-        setData((prev) => prev.filter((p) => p._id !== id))
+        await fetchPacientes()
         Swal.fire('Eliminado!', 'El paciente ha sido eliminado.', 'success')
       } catch (err) {
         Swal.fire('Error', `No se pudo eliminar: ${err.message}`, 'error')

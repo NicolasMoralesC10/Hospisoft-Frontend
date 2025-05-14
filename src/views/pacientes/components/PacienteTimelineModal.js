@@ -1,5 +1,6 @@
 // src/components/PacienteTimelineModal.jsx
 import React, { useState } from 'react'
+import { useEffect } from 'react'
 import Swal from 'sweetalert2'
 import {
   CModal,
@@ -12,6 +13,8 @@ import {
   CFormLabel,
   CFormInput,
   CFormFeedback,
+  CInputGroup,
+  CInputGroupText,
   CFormSelect,
   CRow,
   CCol,
@@ -42,12 +45,44 @@ const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint }) => {
   const [user, setUser] = useState(initialUser)
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const [roles, setRoles] = useState([])
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const res = await fetch(`${apiEndpoint}roles/listarpacientes`)
+        if (!res.ok) throw new Error('Error al cargar roles')
+        const data = await res.json()
+        const list = Array.isArray(data) ? data : data.listarRoles || []
+        setRoles(list)
+
+        if (list.length > 0) {
+          setUser((prev) => ({
+            ...prev,
+            rol: list[0]._id,
+          }))
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchRoles()
+  }, [apiEndpoint])
 
   const validateUser = () => {
     const errs = {}
     if (!user.nombreUsuario) errs.nombreUsuario = 'Usuario es requerido'
-    if (!user.emailUser) errs.emailUser = 'Email es requerido'
-    if (!user.passwordUser) errs.passwordUser = 'Contraseña es requerida'
+    if (!user.emailUser) {
+      errs.emailUser = 'Email es requerido'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.emailUser)) {
+      errs.emailUser = 'Debe ser un correo válido'
+    }
+    if (!user.passwordUser) {
+      errs.passwordUser = 'Contraseña es requerida'
+    } else if (user.passwordUser.length < 7) {
+      errs.passwordUser = 'La contraseña debe tener al menos 7 caracteres'
+    } 
+
     if (!user.confirmPassword) errs.confirmPassword = 'Confirmar contraseña es requerida'
     else if (user.passwordUser !== user.confirmPassword)
       errs.confirmPassword = 'Las contraseñas no coinciden'
@@ -198,17 +233,23 @@ const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint }) => {
         <CForm className="px-4">
           {step === 1 && (
             <CRow>
-              <CCol md={6} className="mb-3">
-                <CFormLabel>Usuario</CFormLabel>
-                <CFormInput
-                  value={user.nombreUsuario}
-                  invalid={!!errors.nombreUsuario}
-                  valid={!errors.nombreUsuario && user.nombreUsuario}
-                  onChange={(e) => setUser({ ...user, nombreUsuario: e.target.value })}
-                />
+              <CCol md={5} className="mb-3">
+                <CFormLabel htmlFor="validationServerUsername">Usuario</CFormLabel>
+                <CInputGroup className="has-validation">
+                  <CInputGroupText id="inputGroupPrepend03">@</CInputGroupText>
+                  <CFormInput
+                    type="text"
+                    value={user.nombreUsuario}
+                    id="validationServerUsername"
+                    invalid={!!errors.nombreUsuario}
+                    aria-describedby="inputGroupPrepend03"
+                    valid={!errors.nombreUsuario && user.nombreUsuario}
+                    onChange={(e) => setUser({ ...user, nombreUsuario: e.target.value })}
+                  />
+                </CInputGroup>
                 <CFormFeedback invalid>{errors.nombreUsuario}</CFormFeedback>
               </CCol>
-              <CCol md={6} className="mb-3">
+              <CCol md={7} className="mb-3">
                 <CFormLabel>Email</CFormLabel>
                 <CFormInput
                   type="email"
@@ -240,22 +281,6 @@ const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint }) => {
                   onChange={(e) => setUser({ ...user, confirmPassword: e.target.value })}
                 />
                 <CFormFeedback invalid>{errors.confirmPassword}</CFormFeedback>
-              </CCol>
-              <CCol md={6} className="mb-3">
-                <CFormLabel>Rol</CFormLabel>
-                <CFormSelect
-                  value={user.rol}
-                  invalid={!!errors.rol}
-                  valid={!errors.rol && user.rol}
-                  onChange={(e) => setUser({ ...user, rol: e.target.value })}
-                >
-                  <option value="" disabled>
-                    Seleccione rol...
-                  </option>
-                  <option value="admin">Admin</option>
-                  <option value="user">User</option>
-                </CFormSelect>
-                <CFormFeedback invalid>{errors.rol}</CFormFeedback>
               </CCol>
             </CRow>
           )}
