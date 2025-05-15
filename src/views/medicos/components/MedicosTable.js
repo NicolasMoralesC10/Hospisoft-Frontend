@@ -31,20 +31,25 @@ const columns = [
   { accessorKey: 'nombre', header: 'Nombre' },
   { accessorKey: 'documento', header: 'Documento' },
   { accessorKey: 'telefono', header: 'Teléfono' },
+  { accessorKey: 'especialidad', header: 'Especialidad' },
   {
-    accessorKey: 'fechaNacimiento',
-    header: 'Nacimiento',
-    cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+    accessorKey: 'idUsuario.username',
+    header: 'Usuario',
+    cell: (info) => info.row.original.idUsuario?.username || 'N/A',
   },
-  { accessorKey: 'email', header: 'E-mail' },
+  {
+    accessorKey: 'idUsuario.email',
+    header: 'Email',
+    cell: (info) => info.row.original.idUsuario?.email || 'N/A',
+  },
   {
     accessorKey: 'status',
     header: 'Estado',
     cell: (info) => {
       const status = info.getValue()
       const map = {
-        1: ['success', 'Activo'],
         0: ['secondary', 'Inactivo'],
+        1: ['success', 'Activo'],
         2: ['warning', 'Pendiente'],
       }
       const [color, text] = map[status] || ['dark', 'Desconocido']
@@ -60,7 +65,7 @@ const columns = [
           size="sm"
           color="info"
           className="me-2 text-light rounded-pill"
-          onClick={() => console.log('Editar', row.original._id)}
+          onClick={() => table.options.meta.handleEdit(row.original)}
         >
           <UserRoundPen />
         </CButton>
@@ -82,10 +87,24 @@ const MedicosTable = ({ apiEndpoint }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
+  const [editingMedico, setEditingMedico] = useState(null)
 
   // Fetch de datos
+  const fetchMedicos = async () => {
+    try {
+      const res = await fetch(apiEndpoint)
+      if (!res.ok) throw new Error(res.statusText)
+      const json = await res.json()
+      setData(json.data || [])
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    async function fetchMedicos() {
+    /* async function fetchMedicos() {
       try {
         const res = await fetch(apiEndpoint)
         if (!res.ok) throw new Error(res.statusText)
@@ -96,7 +115,7 @@ const MedicosTable = ({ apiEndpoint }) => {
       } finally {
         setLoading(false)
       }
-    }
+    } */
     fetchMedicos()
   }, [apiEndpoint])
 
@@ -105,6 +124,12 @@ const MedicosTable = ({ apiEndpoint }) => {
     // POST /medicos con client, luego POST /usuarios con user y se relacionan ambos
     console.log('Cliente:', client)
     console.log('Usuario:', user)
+  }
+
+  const handleEdit = async (medico) => {
+    // spread operator: pasa las propiedades del objeto 'medico' directamente dentro de uno nuevo.
+    setEditingMedico({ ...medico })
+    setModalVisible(true)
   }
 
   // Función de eliminar
@@ -127,7 +152,7 @@ const MedicosTable = ({ apiEndpoint }) => {
         })
         if (!res.ok) throw new Error('Error al eliminar')
         setData((prev) => prev.filter((p) => p._id !== id))
-        Swal.fire('Eliminado!', 'El medico ha sido eliminado.', 'success')
+        Swal.fire('Eliminado', 'Medico eliminado correctamente', 'success')
       } catch (err) {
         Swal.fire('Error', `No se pudo eliminar: ${err.message}`, 'error')
       }
@@ -138,7 +163,7 @@ const MedicosTable = ({ apiEndpoint }) => {
   const table = useReactTable({
     data,
     columns,
-    meta: { handleDelete },
+    meta: { handleDelete, handleEdit },
     initialState: {
       pagination: { pageIndex: 0, pageSize: 5 },
       globalFilter: '',
@@ -181,7 +206,13 @@ const MedicosTable = ({ apiEndpoint }) => {
       <CCard className="mb-4 shadow-sm">
         <CCardHeader className="d-flex justify-content-between align-items-center bg-primary text-white">
           <strong>Medicos</strong>
-          <CButton color="light" onClick={() => setModalVisible(true)}>
+          <CButton
+            color="light"
+            onClick={() => {
+              setModalVisible(true)
+              setEditingMedico(null)
+            }}
+          >
             + Nuevo Medico
           </CButton>
         </CCardHeader>
@@ -269,6 +300,9 @@ const MedicosTable = ({ apiEndpoint }) => {
         visible={modalVisible}
         setVisible={setModalVisible}
         apiEndpoint="http://127.0.0.1:3000/api/"
+        medico={editingMedico}
+        isEdit={!!editingMedico}
+        onSuccess={fetchMedicos}
       />
     </>
   )

@@ -1,5 +1,5 @@
 // src/components/MedicoTimelineModal.jsx
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Swal from 'sweetalert2'
 import {
   CModal,
@@ -31,12 +31,48 @@ const initialUser = {
   rol: '',
 }
 
-const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint }) => {
+const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit, onSuccess }) => {
   const [step, setStep] = useState(1)
   const [client, setClient] = useState(initialClient)
   const [user, setUser] = useState(initialUser)
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!visible) {
+      // Si la modal se cerró, se limpian los estados
+      setClient(initialClient)
+      setUser(initialUser)
+      setErrors({})
+      setStep(1)
+    }
+  }, [visible])
+
+  useEffect(() => {
+    if (medico) {
+      setClient({
+        nombre: medico.nombre,
+        documento: medico.documento,
+        telefono: medico.telefono,
+        especialidad: medico.especialidad,
+        email: medico.email,
+        status: medico.status,
+      })
+      if (medico.idUsuario) {
+        setUser({
+          username: medico.idUsuario.username,
+          email: medico.idUsuario.email,
+          password: '', // Por seguridad, no mostrar la password
+          confirmPassword: '',
+        })
+      }
+    } else {
+      // Si es creación, se limpian los formularios
+      setClient(initialClient)
+      setUser(initialUser)
+    }
+    setStep(1)
+  }, [medico])
 
   const validateClient = () => {
     const errs = {}
@@ -50,18 +86,49 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint }) => {
 
   const validateUser = () => {
     const errs = {}
-    if (!user.username) errs.username = 'Usuario es requerido'
-    if (!user.email) errs.email = 'Email es requerido'
-    if (!user.password) errs.password = 'Contraseña es requerida'
-    if (!user.confirmPassword) errs.confirmPassword = 'Confirmar contraseña es requerida'
-    else if (user.password !== user.confirmPassword)
-      errs.confirmPassword = 'Las contraseñas no coinciden'
-    /* if (!user.rol) errs.rol = 'Rol es requerido' */
+
+    // Validar username y email siempre
+    if (!user.username || user.username.trim() === '') {
+      errs.username = 'Usuario es requerido'
+    }
+    if (!user.email || user.email.trim() === '') {
+      errs.email = 'Email es requerido'
+    }
+
+    if (!isEdit) {
+      // En creación, password y confirmPassword son obligatorios
+      if (!user.password || user.password.trim() === '') {
+        errs.password = 'Contraseña es requerida'
+      }
+      if (!user.confirmPassword || user.confirmPassword.trim() === '') {
+        errs.confirmPassword = 'Confirmar contraseña es requerida'
+      }
+      if (user.password && user.confirmPassword && user.password !== user.confirmPassword) {
+        errs.confirmPassword = 'Las contraseñas no coinciden'
+      }
+    } else {
+      // En edición, password y confirmPassword son opcionales
+      // Pero si uno de los dos está lleno, ambos deben coincidir y no estar vacíos
+      const passwordFilled = user.password && user.password.trim() !== ''
+      const confirmFilled = user.confirmPassword && user.confirmPassword.trim() !== ''
+      if (passwordFilled || confirmFilled) {
+        if (!passwordFilled) {
+          errs.password = 'Contraseña es requerida si desea cambiarla'
+        }
+        if (!confirmFilled) {
+          errs.confirmPassword = 'Debe confirmar la contraseña si desea cambiarla'
+        }
+        if (passwordFilled && confirmFilled && user.password !== user.confirmPassword) {
+          errs.confirmPassword = 'Las contraseñas no coinciden'
+        }
+      }
+    }
+
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
 
-  const handleSubmit = async () => {
+  /* const handleSubmit = async () => {
     setSubmitting(true)
     try {
       const userRes = await fetch(`${apiEndpoint}user/create`, {
@@ -99,6 +166,122 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint }) => {
       await clientRes.json()
 
       Swal.fire('Éxito', 'Información registrada correctamente.', 'success')
+      setVisible(false)
+      setStep(1)
+      setClient(initialClient)
+      setUser(initialUser)
+      setErrors({})
+    } catch (error) {
+      const mensaje = error.message || '¡Error desconocido!'
+      Swal.fire('Error', mensaje, 'error')
+
+      if (mensaje.includes('usuario')) {
+        setStep(1)
+      } else if (mensaje.includes('medico')) {
+        setStep(2)
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  } */
+
+  const handleSubmit = async () => {
+    setSubmitting(true)
+    try {
+      let userId = medico?.idUsuario?._id || medico?.idUsuario || null
+
+      // 1. Crear o actualizar usuario
+      let userRes
+      if (isEdit && userId) {
+        // Actualizar usuario (PUT)
+        const userPayload = {
+          username: user.username,
+          email: user.email,
+          rol: '6824a71dc6f98f4bca35e4f6',
+        }
+
+        // Solo incluir password si no está vacío ni es solo espacios
+        if (user.password && user.password.trim() !== '') {
+          userPayload.password = user.password
+        }
+        userRes = await fetch(`${apiEndpoint}user/update/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userPayload }),
+        })
+      } else {
+        // Crear usuario (POST)
+        userRes = await fetch(`${apiEndpoint}user/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: user.username,
+            email: user.email,
+            password: user.password,
+            rol: '6824a71dc6f98f4bca35e4f6',
+          }),
+        })
+      }
+
+      if (!userRes.ok) {
+        const msg = await userRes.text()
+        throw new Error(`Error al crear/actualizar el usuario: ${msg}`)
+      }
+
+      const userData = await userRes.json()
+      const idUsuario =
+        userData.data?._id ||
+        userData.id ||
+        userData._id ||
+        (userData.usuario && userData.usuario?._id) ||
+        userId
+      if (!idUsuario) throw new Error('No se obtuvo el idUsuario del medico.')
+
+      // 2. Crear o actualizar medico
+      let clientRes
+      if (isEdit && medico?._id) {
+        // Actualizar medico (PUT)
+        const clientPayload = {
+          id: medico._id,
+          nombre: client.nombre,
+          documento: Number(client.documento),
+          telefono: Number(client.telefono),
+          especialidad: client.especialidad,
+        }
+        clientRes = await fetch(`${apiEndpoint}medico/update`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(clientPayload),
+        })
+      } else {
+        // Crear medico (POST)
+        const clientPayload = {
+          nombre: client.nombre,
+          documento: Number(client.documento),
+          telefono: Number(client.telefono),
+          especialidad: client.especialidad,
+          idUsuario,
+        }
+        clientRes = await fetch(`${apiEndpoint}medico/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(clientPayload),
+        })
+      }
+
+      if (!clientRes.ok) {
+        const msg = await clientRes.text()
+        throw new Error(`Error al crear/actualizar el medico: ${msg}`)
+      }
+
+      await clientRes.json()
+
+      Swal.fire(
+        'Éxito',
+        `Información ${isEdit ? 'actualizada' : 'registrada'} correctamente`,
+        'success',
+      )
+      onSuccess()
       setVisible(false)
       setStep(1)
       setClient(initialClient)
