@@ -1,5 +1,5 @@
 // src/components/MedicoTimelineModal.jsx
-import React, { useEffect, useState } from 'react'
+import React, { use, useEffect, useState } from 'react'
 import Swal from 'sweetalert2'
 import {
   CModal,
@@ -37,6 +37,30 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
   const [user, setUser] = useState(initialUser)
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const [roles, setRoles] = useState([])
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const res = await fetch(`${apiEndpoint}roles/listarmedicos`)
+        if (!res.ok) throw new Error('Error al cargar roles.')
+        const data = await res.json()
+        const list = Array.isArray(data) ? data : data.listarRoles || []
+        setRoles(list)
+
+        console.log(roles)
+        if (list.length > 0) {
+          setUser((prev) => ({
+            ...prev,
+            rol: list[0]._id,
+          }))
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchRoles()
+  }, [apiEndpoint])
 
   useEffect(() => {
     if (!visible) {
@@ -76,10 +100,35 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
 
   const validateClient = () => {
     const errs = {}
-    if (!client.nombre) errs.nombre = 'Nombre es requerido'
-    if (!client.documento) errs.documento = 'Documento es requerido'
-    if (!client.telefono) errs.telefono = 'Teléfono es requerido'
-    if (!client.especialidad) errs.especialidad = 'Especialidad es requerida'
+
+    // Validar nombre
+    if (!client.nombre || client.nombre.trim() === '') {
+      errs.nombre = 'Nombre es requerido'
+    } else if (client.nombre.length < 3) {
+      errs.nombre = 'El nombre debe tener al menos 3 caracteres'
+    }
+
+    // Validar documento
+    if (!client.documento) {
+      errs.documento = 'Documento es requerido'
+    } else if (client.documento < 0) {
+      errs.documento = 'Debe ser un documento valido'
+    } else if (client.documento.length > 0 && client.documento.length < 6) {
+      errs.documento = 'El documento debe tener al menos 6 caracteres'
+    }
+
+    // Validar teléfono
+    if (!client.telefono) {
+      errs.telefono = 'Teléfono es requerido'
+    } else if (client.telefono.length < 6 || client.telefono.length > 10) {
+      errs.telefono = 'Debe ser un teléfono valido'
+    }
+
+    // Validar especialidad
+    if (!client.especialidad || client.especialidad.trim() === '') {
+      errs.especialidad = 'Especialidad es requerida'
+    }
+
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -93,6 +142,8 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     }
     if (!user.email || user.email.trim() === '') {
       errs.email = 'Email es requerido'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)) {
+      errs.email = 'Debe ser un correo válido'
     }
 
     if (!isEdit) {
@@ -128,61 +179,26 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     return Object.keys(errs).length === 0
   }
 
-  /* const handleSubmit = async () => {
-    setSubmitting(true)
-    try {
-      const userRes = await fetch(`${apiEndpoint}user/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: user.username,
-          email: user.email,
-          password: user.password,
-          rol: '6824a71dc6f98f4bca35e4f6',
-        }),
-      })
-
-      if (!userRes.ok) {
-        const msg = await userRes.text()
-        throw new Error(`Error al crear el usuario: ${msg}`)
-      }
-
-      const userData = await userRes.json()
-      const idUsuario = userData._id || userData.id || (userData.data && userData.data._id)
-      if (!idUsuario) throw new Error('No se obtuvo el idUsuario del medico.')
-
-      const clientPayload = { ...client, idUsuario }
-      const clientRes = await fetch(`${apiEndpoint}medico/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(clientPayload),
-      })
-
-      if (!clientRes.ok) {
-        const msg = await clientRes.text()
-        throw new Error(`Error al crear el medico: ${msg}`)
-      }
-
-      await clientRes.json()
-
-      Swal.fire('Éxito', 'Información registrada correctamente.', 'success')
-      setVisible(false)
-      setStep(1)
-      setClient(initialClient)
-      setUser(initialUser)
-      setErrors({})
-    } catch (error) {
-      const mensaje = error.message || '¡Error desconocido!'
-      Swal.fire('Error', mensaje, 'error')
-
-      if (mensaje.includes('usuario')) {
-        setStep(1)
-      } else if (mensaje.includes('medico')) {
-        setStep(2)
-      }
-    } finally {
-      setSubmitting(false)
+  /* const validateUser = () => {
+    const errs = {}
+    if (!user.nombreUsuario) errs.nombreUsuario = 'Usuario es requerido'
+    if (!user.emailUser) {
+      errs.emailUser = 'Email es requerido'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.emailUser)) {
+      errs.emailUser = 'Debe ser un correo válido'
     }
+    if (!user.passwordUser) {
+      errs.passwordUser = 'Contraseña es requerida'
+    } else if (user.passwordUser.length < 7) {
+      errs.passwordUser = 'La contraseña debe tener al menos 7 caracteres'
+    }
+
+    if (!user.confirmPassword) errs.confirmPassword = 'Confirmar contraseña es requerida'
+    else if (user.passwordUser !== user.confirmPassword)
+      errs.confirmPassword = 'Las contraseñas no coinciden'
+    if (!user.rol) errs.rol = 'Rol es requerido'
+    setErrors(errs)
+    return Object.keys(errs).length === 0
   } */
 
   const handleSubmit = async () => {
@@ -193,21 +209,23 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
       // 1. Crear o actualizar usuario
       let userRes
       if (isEdit && userId) {
+        console.log(userId)
         // Actualizar usuario (PUT)
         const userPayload = {
+          id: userId,
           username: user.username,
           email: user.email,
-          rol: '6824a71dc6f98f4bca35e4f6',
+          rol: user.rol,
         }
-
         // Solo incluir password si no está vacío ni es solo espacios
         if (user.password && user.password.trim() !== '') {
           userPayload.password = user.password
         }
-        userRes = await fetch(`${apiEndpoint}user/update/${userId}`, {
+        console.log(userPayload)
+        userRes = await fetch(`${apiEndpoint}user/update`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userPayload }),
+          body: JSON.stringify(userPayload),
         })
       } else {
         // Crear usuario (POST)
@@ -218,7 +236,7 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
             username: user.username,
             email: user.email,
             password: user.password,
-            rol: '6824a71dc6f98f4bca35e4f6',
+            rol: user.rol,
           }),
         })
       }
@@ -229,13 +247,15 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
       }
 
       const userData = await userRes.json()
+      console.log(userData)
       const idUsuario =
         userData.data?._id ||
         userData.id ||
         userData._id ||
         (userData.usuario && userData.usuario?._id) ||
         userId
-      if (!idUsuario) throw new Error('No se obtuvo el idUsuario del medico.')
+
+      if (!idUsuario) throw new Error('No se obtuvo el idUsuario del medico.' + idUsuario)
 
       // 2. Crear o actualizar medico
       let clientRes
@@ -375,38 +395,62 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
               <CCol md={6} className="mb-3">
                 <CFormLabel>Nombre completo</CFormLabel>
                 <CFormInput
+                  type="text"
                   value={client.nombre}
                   invalid={!!errors.nombre}
+                  valid={!errors.nombre && client.nombre}
                   onChange={(e) => setClient({ ...client, nombre: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.nombre}</CFormFeedback>
+                {errors.nombre ? (
+                  <CFormFeedback invalid>{errors.nombre}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
               <CCol md={6} className="mb-3">
                 <CFormLabel>Documento</CFormLabel>
                 <CFormInput
+                  type="number"
                   value={client.documento}
                   invalid={!!errors.documento}
+                  valid={!errors.documento && client.documento}
                   onChange={(e) => setClient({ ...client, documento: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.documento}</CFormFeedback>
+                {errors.documento ? (
+                  <CFormFeedback invalid>{errors.documento}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
               <CCol md={6} className="mb-3">
                 <CFormLabel>Teléfono</CFormLabel>
                 <CFormInput
+                  type="number"
                   value={client.telefono}
                   invalid={!!errors.telefono}
+                  valid={!errors.telefono && client.telefono}
                   onChange={(e) => setClient({ ...client, telefono: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.telefono}</CFormFeedback>
+                {errors.telefono ? (
+                  <CFormFeedback invalid>{errors.telefono}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
               <CCol md={6} className="mb-3">
                 <CFormLabel>Especialidad</CFormLabel>
                 <CFormInput
+                  type="text"
                   value={client.especialidad}
                   invalid={!!errors.especialidad}
+                  valid={!errors.especialidad && client.especialidad}
                   onChange={(e) => setClient({ ...client, especialidad: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.especialidad}</CFormFeedback>
+                {errors.especialidad ? (
+                  <CFormFeedback invalid>{errors.especialidad}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
             </CRow>
           )}
@@ -416,11 +460,17 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
               <CCol md={6} className="mb-3">
                 <CFormLabel>Usuario</CFormLabel>
                 <CFormInput
+                  type="text"
                   value={user.username}
                   invalid={!!errors.username}
+                  valid={!errors.username && client.username}
                   onChange={(e) => setUser({ ...user, username: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.username}</CFormFeedback>
+                {errors.username ? (
+                  <CFormFeedback invalid>{errors.username}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
               <CCol md={6} className="mb-3">
                 <CFormLabel>Email</CFormLabel>
@@ -428,9 +478,14 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
                   type="email"
                   value={user.email}
                   invalid={!!errors.email}
+                  valid={!errors.email && client.email}
                   onChange={(e) => setUser({ ...user, email: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.email}</CFormFeedback>
+                {errors.email ? (
+                  <CFormFeedback invalid>{errors.email}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
               <CCol md={6} className="mb-3">
                 <CFormLabel>Contraseña</CFormLabel>
@@ -438,9 +493,14 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
                   type="password"
                   value={user.password}
                   invalid={!!errors.password}
+                  valid={!errors.password && client.password}
                   onChange={(e) => setUser({ ...user, password: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.password}</CFormFeedback>
+                {errors.password ? (
+                  <CFormFeedback invalid>{errors.password}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
               <CCol md={6} className="mb-3">
                 <CFormLabel>Confirmar Contraseña</CFormLabel>
@@ -448,9 +508,14 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
                   type="password"
                   value={user.confirmPassword}
                   invalid={!!errors.confirmPassword}
+                  valid={!errors.confirmPassword && client.confirmPassword}
                   onChange={(e) => setUser({ ...user, confirmPassword: e.target.value })}
                 />
-                <CFormFeedback invalid>{errors.confirmPassword}</CFormFeedback>
+                {errors.confirmPassword ? (
+                  <CFormFeedback invalid>{errors.confirmPassword}</CFormFeedback>
+                ) : (
+                  <CFormFeedback valid>Correcto</CFormFeedback>
+                )}
               </CCol>
             </CRow>
           )}
