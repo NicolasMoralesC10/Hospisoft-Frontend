@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { UserRoundX, UserRoundPen } from 'lucide-react'
 import Swal from 'sweetalert2'
-import PacienteTimelineModal from './PacienteTimelineModal'
+import MedicoTimelineModal from './MedicoTimelineModal'
 import {
   CCard,
   CCardHeader,
@@ -15,6 +15,7 @@ import {
   CButton,
   CBadge,
   CSpinner,
+  CAlert,
 } from '@coreui/react'
 import {
   useReactTable,
@@ -27,26 +28,28 @@ import {
 
 // columnas de la tabla :: acessorKey es el nombre de la propiedad en el Json
 const columns = [
-  { accessorKey: 'nombrePaciente', header: 'Nombre' },
+  { accessorKey: 'nombre', header: 'Nombre' },
   { accessorKey: 'documento', header: 'Documento' },
-  { accessorKey: 'telefonoPaciente', header: 'Teléfono' },
+  { accessorKey: 'telefono', header: 'Teléfono' },
+  { accessorKey: 'especialidad', header: 'Especialidad' },
   {
-    accessorKey: 'fechaNacimiento',
-    header: 'Nacimiento',
-    cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+    accessorKey: 'idUsuario.username',
+    header: 'Usuario',
+    cell: (info) => info.row.original.idUsuario?.username || 'N/A',
   },
-  { accessorKey: 'epsPaciente', header: 'EPS' },
-  { accessorKey: 'estadoCivil', header: 'Estado Civil' },
-  { accessorKey: 'idUsuario.emailUser', header: 'correo' },
-  { accessorKey: 'direccion', header: 'Dirección' },
+  {
+    accessorKey: 'idUsuario.email',
+    header: 'Email',
+    cell: (info) => info.row.original.idUsuario?.email || 'N/A',
+  },
   {
     accessorKey: 'status',
     header: 'Estado',
     cell: (info) => {
       const status = info.getValue()
       const map = {
-        1: ['success', 'Activo'],
         0: ['secondary', 'Inactivo'],
+        1: ['success', 'Activo'],
         2: ['warning', 'Pendiente'],
       }
       const [color, text] = map[status] || ['dark', 'Desconocido']
@@ -62,10 +65,7 @@ const columns = [
           size="sm"
           color="info"
           className="me-2 text-light rounded-pill"
-          onClick={() => {
-            console.log('Editar', row.original)
-            table.options.meta.handleEdit(row.original)
-          }}
+          onClick={() => table.options.meta.handleEdit(row.original)}
         >
           <UserRoundPen />
         </CButton>
@@ -82,16 +82,17 @@ const columns = [
   },
 ]
 
-const PacientesTable = ({ apiEndpoint }) => {
+const MedicosTable = ({ apiEndpoint }) => {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
-  const [editingPaciente, setEditingPaciente] = useState(null)
+  const [editingMedico, setEditingMedico] = useState(null)
 
-  const fetchPacientes = async () => {
+  // Fetch de datos
+  const fetchMedicos = async () => {
     try {
-      const res = await fetch(apiEndpoint + 'patient/list')
+      const res = await fetch(apiEndpoint)
       if (!res.ok) throw new Error(res.statusText)
       const json = await res.json()
       setData(json.data || [])
@@ -102,37 +103,56 @@ const PacientesTable = ({ apiEndpoint }) => {
     }
   }
 
-  const handleEdit = async (paciente) => {
-    // spread operator: pasa las propiedades del objeto 'Paciente' directamente dentro de uno nuevo.
-    setEditingPaciente({ ...paciente })
-    setModalVisible(true)
+  useEffect(() => {
+    /* async function fetchMedicos() {
+      try {
+        const res = await fetch(apiEndpoint)
+        if (!res.ok) throw new Error(res.statusText)
+        const json = await res.json()
+        setData(json.data || [])
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    } */
+    fetchMedicos()
+  }, [apiEndpoint])
+
+  const handleCreate = ({ client, user }) => {
+    // Aquí envías a tu API:
+    // POST /medicos con client, luego POST /usuarios con user y se relacionan ambos
+    console.log('Cliente:', client)
+    console.log('Usuario:', user)
   }
 
-  // Fetch de datos
-  useEffect(() => {
-    fetchPacientes()
-  }, [apiEndpoint])
+  const handleEdit = async (medico) => {
+    // spread operator: pasa las propiedades del objeto 'medico' directamente dentro de uno nuevo.
+    setEditingMedico({ ...medico })
+    setModalVisible(true)
+  }
 
   // Función de eliminar
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: '¿Estás seguro?',
-      text: 'Esta acción eliminará al paciente permanentemente.',
+      text: 'Esta acción eliminará al medico permanentemente.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
     })
     if (result.isConfirmed) {
+      const apiEndpointDelete = apiEndpoint.replace('list', 'delete')
       try {
-        const res = await fetch(apiEndpoint + 'patient/delet', {
-          method: 'PUT',
+        const res = await fetch(`${apiEndpointDelete}`, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id }),
         })
         if (!res.ok) throw new Error('Error al eliminar')
-        await fetchPacientes()
-        Swal.fire('Eliminado!', 'El paciente ha sido eliminado.', 'success')
+        setData((prev) => prev.filter((p) => p._id !== id))
+        Swal.fire('Eliminado', 'Medico eliminado correctamente', 'success')
       } catch (err) {
         Swal.fire('Error', `No se pudo eliminar: ${err.message}`, 'error')
       }
@@ -185,15 +205,15 @@ const PacientesTable = ({ apiEndpoint }) => {
     <>
       <CCard className="mb-4 shadow-sm">
         <CCardHeader className="d-flex justify-content-between align-items-center bg-primary text-white">
-          <strong>Pacientes</strong>
+          <strong>Medicos</strong>
           <CButton
             color="light"
             onClick={() => {
               setModalVisible(true)
-              setEditingPaciente(null)
+              setEditingMedico(null)
             }}
           >
-            + Nuevo Paciente
+            + Nuevo Medico
           </CButton>
         </CCardHeader>
         <CCardBody>
@@ -201,7 +221,7 @@ const PacientesTable = ({ apiEndpoint }) => {
           <div className="d-flex justify-content-between mb-2">
             <input
               className="form-control w-25"
-              placeholder="Buscar paciente..."
+              placeholder="Buscar medico..."
               onChange={(e) => setGlobalFilter(e.target.value)}
             />
             <select
@@ -244,7 +264,7 @@ const PacientesTable = ({ apiEndpoint }) => {
                 <CTableRow>
                   <CTableDataCell colSpan={columns.length} className="text-center py-3">
                     {data.length === 0
-                      ? 'No hay pacientes registrados.'
+                      ? 'No hay medicos registrados.'
                       : 'No se encontraron coincidencias.'}
                   </CTableDataCell>
                 </CTableRow>
@@ -276,16 +296,16 @@ const PacientesTable = ({ apiEndpoint }) => {
           </div>
         </CCardBody>
       </CCard>
-      <PacienteTimelineModal
+      <MedicoTimelineModal
         visible={modalVisible}
         setVisible={setModalVisible}
-        paciente={editingPaciente}
-        isEdit={!!editingPaciente}
         apiEndpoint="http://127.0.0.1:3000/api/"
-        onSuccess={fetchPacientes}
+        medico={editingMedico}
+        isEdit={!!editingMedico}
+        onSuccess={fetchMedicos}
       />
     </>
   )
 }
 
-export default PacientesTable
+export default MedicosTable

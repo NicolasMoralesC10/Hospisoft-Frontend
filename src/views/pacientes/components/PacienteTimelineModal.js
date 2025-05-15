@@ -39,13 +39,19 @@ const initialUser = {
   rol: '',
 }
 
-const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint, onSuccess }) => {
+const PacienteTimelineModal = ({
+  visible,
+  setVisible,
+  apiEndpoint,
+  paciente,
+  isEdit,
+  onSuccess,
+}) => {
   const [step, setStep] = useState(1)
   const [client, setClient] = useState(initialClient)
   const [user, setUser] = useState(initialUser)
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
-  const [roles, setRoles] = useState([])
 
   useEffect(() => {
     const fetchRoles = async () => {
@@ -54,7 +60,6 @@ const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint, onSuccess }) 
         if (!res.ok) throw new Error('Error al cargar roles')
         const data = await res.json()
         const list = Array.isArray(data) ? data : data.listarRoles || []
-        setRoles(list)
 
         if (list.length > 0) {
           setUser((prev) => ({
@@ -67,26 +72,79 @@ const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint, onSuccess }) 
       }
     }
     fetchRoles()
-  }, [apiEndpoint])
+
+    if (!visible) {
+      // Si la modal se cerró, se limpian los estados
+      setClient(initialClient)
+      setUser(initialUser)
+      setErrors({})
+      setStep(1)
+    }
+
+    if (paciente) {
+      setClient({
+        nombre: paciente.nombrePaciente,
+        documento: paciente.documento,
+        telefono: paciente.telefonoPaciente,
+        nacimiento: paciente.fechaNacimiento,
+        eps: paciente.epsPaciente,
+        estadoCivil: paciente.estadoCivil,
+        sexo: paciente.sexo,
+        direccion: paciente.direccion,
+      })
+      if (paciente.idUsuario) {
+        setUser({
+          nombreUsuario: paciente.idUsuario.nombreUsuario,
+          emailUser: paciente.idUsuario.emailUser,
+          passwordUser: '', // Por seguridad, no mostrar la password
+          confirmPassword: '',
+        })
+      }
+    } else {
+      // Si es creación, se limpian los formularios
+      setClient(initialClient)
+      setUser(initialUser)
+    }
+  }, [apiEndpoint, visible])
 
   const validateUser = () => {
     const errs = {}
-    if (!user.nombreUsuario) errs.nombreUsuario = 'Usuario es requerido'
-    if (!user.emailUser) {
+    if (!user.nombreUsuario || user.nombreUsuario.trim() === '')
+      errs.nombreUsuario = 'Usuario es requerido'
+    if (!user.emailUser || user.emailUser.trim() === '') {
       errs.emailUser = 'Email es requerido'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.emailUser)) {
       errs.emailUser = 'Debe ser un correo válido'
     }
-    if (!user.passwordUser) {
-      errs.passwordUser = 'Contraseña es requerida'
-    } else if (user.passwordUser.length < 7) {
-      errs.passwordUser = 'La contraseña debe tener al menos 7 caracteres'
+    if (!isEdit) {
+      if (!user.passwordUser || user.passwordUser.trim() === '') {
+        errs.passwordUser = 'Contraseña es requerida'
+      } else if (user.passwordUser.length < 7) {
+        errs.passwordUser = 'La contraseña debe tener al menos 7 caracteres'
+      }
+
+      if (!user.confirmPassword) errs.confirmPassword = 'Confirmar contraseña es requerida'
+      else if (user.passwordUser !== user.confirmPassword)
+        errs.confirmPassword = 'Las contraseñas no coinciden'
+      if (!user.rol) errs.rol = 'Rol es requerido'
+    } else {
+      // En edición, password y confirmPassword son opcionales
+      // Pero si uno de los dos está lleno, ambos deben coincidir y no estar vacíos
+      const passwordFilled = user.passwordUser && user.passwordUser.trim() !== ''
+      const confirmFilled = user.confirmPassword && user.confirmPassword.trim() !== ''
+      if (passwordFilled || confirmFilled) {
+        if (!passwordFilled) {
+          errs.password = 'Contraseña es requerida si desea cambiarla'
+        }
+        if (!confirmFilled) {
+          errs.confirmPassword = 'Debe confirmar la contraseña si desea cambiarla'
+        }
+        if (passwordFilled && confirmFilled && user.passwordUser !== user.confirmPassword) {
+          errs.confirmPassword = 'Las contraseñas no coinciden'
+        }
+      }
     }
 
-    if (!user.confirmPassword) errs.confirmPassword = 'Confirmar contraseña es requerida'
-    else if (user.passwordUser !== user.confirmPassword)
-      errs.confirmPassword = 'Las contraseñas no coinciden'
-    if (!user.rol) errs.rol = 'Rol es requerido'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -108,16 +166,39 @@ const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint, onSuccess }) 
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
-      const userRes = await fetch(`${apiEndpoint}user/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombreUsuario: user.nombreUsuario,
-          emailUser: user.emailUser,
-          passwordUser: user.passwordUser,
+      let userId = paciente?.idUsuario?._id || paciente?.idUsuario || null
+
+      let userRes
+      if (isEdit && userId) {
+        const userPayload = {
+          id: userId,
+          username: user.nombreUsuario,
+          email: user.emailUser,
           rol: user.rol,
-        }),
-      })
+        }
+        // Solo incluir password si no está vacío ni es solo espacios
+        if (user.passwordUser && user.passwordUser.trim() !== '') {
+          userPayload.password = user.passwordUser
+          console.log('Decision')
+        }
+        console.log(user.passwordUser)
+        userRes = await fetch(`${apiEndpoint}user/update`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userPayload),
+        })
+      } else {
+        userRes = await fetch(`${apiEndpoint}user/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: user.nombreUsuario,
+            email: user.emailUser,
+            password: user.passwordUser,
+            rol: user.rol,
+          }),
+        })
+      }
 
       if (!userRes.ok) {
         const msg = await userRes.text()
@@ -126,14 +207,34 @@ const PacienteTimelineModal = ({ visible, setVisible, apiEndpoint, onSuccess }) 
 
       const userData = await userRes.json()
       const idUsuario = userData._id || userData.id || (userData.data && userData.data._id)
-      if (!idUsuario) throw new Error('No se obtuvo idUsuario del servicio')
+      if (!idUsuario) throw new Error('No se obtuvo idUsuario del paciente')
 
-      const clientPayload = { ...client, idUsuario }
-      const clientRes = await fetch(`${apiEndpoint}patient/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(clientPayload),
-      })
+      let pacienteId = paciente?._id || null
+      let clientRes
+      if (isEdit && paciente?._id) {
+        clientRes = await fetch(`${apiEndpoint}patient/update`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: pacienteId,
+            nombre: client.nombre,
+            documento: client.documento,
+            telefono: client.telefono,
+            nacimiento: client.nacimiento,
+            eps: client.eps,
+            estadoCivil: client.estadoCivil,
+            sexo: client.sexo,
+            direccion: client.direccion,
+          }),
+        })
+      } else {
+        const clientPayload = { ...client, idUsuario }
+        clientRes = await fetch(`${apiEndpoint}patient/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(clientPayload),
+        })
+      }
 
       if (!clientRes.ok) {
         const msg = await clientRes.text()
