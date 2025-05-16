@@ -39,7 +39,7 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
   const [submitting, setSubmitting] = useState(false)
   const [roles, setRoles] = useState([])
 
-  useEffect(() => {
+  /* useEffect(() => {
     const fetchRoles = async () => {
       try {
         const res = await fetch(`${apiEndpoint}roles/listarmedicos`)
@@ -48,8 +48,7 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
         const list = Array.isArray(data) ? data : data.listarRoles || []
         setRoles(list)
 
-        console.log(roles)
-        if (list.length > 0) {
+        if (list.length > 0 && !user.rol) {
           setUser((prev) => ({
             ...prev,
             rol: list[0]._id,
@@ -60,7 +59,42 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
       }
     }
     fetchRoles()
-  }, [apiEndpoint])
+  }, [apiEndpoint]) */
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const res = await fetch(`${apiEndpoint}roles/listarmedicos`)
+        if (!res.ok) throw new Error('Error al cargar roles.')
+        const data = await res.json()
+
+        // Asegúrate de manejar correctamente la respuesta
+        const list = Array.isArray(data) ? data : data.listarRoles || []
+
+        // Verifica que realmente hay roles médicos
+        if (list.length === 0) {
+          throw new Error('No se encontraron roles de médico disponibles')
+        }
+
+        setRoles(list)
+
+        // Establece el rol SIEMPRE, no solo si no existe
+        setUser((prev) => ({
+          ...prev,
+          rol: list[0]._id, // Usa el primer rol médico encontrado
+        }))
+      } catch (err) {
+        console.error(err)
+        Swal.fire('Error', 'No se pudieron cargar los roles de médico', 'error')
+        setVisible(false) // Cierra el modal si no hay roles
+      }
+    }
+
+    // Solo carga roles cuando el modal está visible
+    if (visible) {
+      fetchRoles()
+    }
+  }, [apiEndpoint, visible]) // Agrega visible como dependencia
 
   useEffect(() => {
     if (!visible) {
@@ -88,6 +122,7 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
           email: medico.idUsuario.email,
           password: '', // Por seguridad, no mostrar la password
           confirmPassword: '',
+          rol: medico.idUsuario.rol,
         })
       }
     } else {
@@ -139,6 +174,8 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     // Validar username y email siempre
     if (!user.username || user.username.trim() === '') {
       errs.username = 'Usuario es requerido'
+    } else if (user.username.length < 3) {
+      errs.username = 'El nombre de usuario debe tener al menos 3 caracteres'
     }
     if (!user.email || user.email.trim() === '') {
       errs.email = 'Email es requerido'
@@ -150,6 +187,9 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
       // En creación, password y confirmPassword son obligatorios
       if (!user.password || user.password.trim() === '') {
         errs.password = 'Contraseña es requerida'
+      }
+      if (user.password.length < 6) {
+        errs.password = 'La contraseña debe tener al menos 6 caracteres'
       }
       if (!user.confirmPassword || user.confirmPassword.trim() === '') {
         errs.confirmPassword = 'Confirmar contraseña es requerida'
@@ -179,29 +219,159 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     return Object.keys(errs).length === 0
   }
 
-  /* const validateUser = () => {
-    const errs = {}
-    if (!user.nombreUsuario) errs.nombreUsuario = 'Usuario es requerido'
-    if (!user.emailUser) {
-      errs.emailUser = 'Email es requerido'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.emailUser)) {
-      errs.emailUser = 'Debe ser un correo válido'
-    }
-    if (!user.passwordUser) {
-      errs.passwordUser = 'Contraseña es requerida'
-    } else if (user.passwordUser.length < 7) {
-      errs.passwordUser = 'La contraseña debe tener al menos 7 caracteres'
-    }
-
-    if (!user.confirmPassword) errs.confirmPassword = 'Confirmar contraseña es requerida'
-    else if (user.passwordUser !== user.confirmPassword)
-      errs.confirmPassword = 'Las contraseñas no coinciden'
-    if (!user.rol) errs.rol = 'Rol es requerido'
-    setErrors(errs)
-    return Object.keys(errs).length === 0
-  } */
+  /* --------------------------------------------------------------- */
 
   const handleSubmit = async () => {
+    setSubmitting(true)
+    let userCreatedId = null // Para manejar el rollback si falla la creación del médico
+
+    try {
+      // 1. Crear o actualizar usuario
+      const { userId, userData } = await handleUserCreation()
+      userCreatedId = userId // Guardamos el ID por si necesitamos hacer rollback
+
+      // 2. Crear o actualizar médico
+      const medicoData = await handleMedicoCreation(userId)
+
+      // Éxito - Mostrar mensaje y limpiar formulario
+      showSuccess()
+      resetForm()
+    } catch (error) {
+      await handleError(error, userCreatedId)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // Funciones auxiliares
+  const handleUserCreation = async () => {
+    const userId = medico?.idUsuario?._id || medico?.idUsuario || null
+
+    const userPayload = {
+      ...(isEdit && userId && { id: userId }),
+      username: user.username,
+      email: user.email,
+      rol: user.rol,
+      ...(user.password?.trim() && { password: user.password }),
+    }
+
+    const endpoint = isEdit && userId ? 'user/update' : 'user/create'
+    const method = isEdit && userId ? 'PUT' : 'POST'
+
+    const userRes = await fetch(`${apiEndpoint}${endpoint}`, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userPayload),
+    })
+
+    if (!userRes.ok) {
+      const msg = await userRes.text()
+      throw new Error(`Error al crear/actualizar el usuario: ${msg}`)
+    }
+
+    const userData = await userRes.json()
+    const extractedUserId = extractUserId(userData, userId)
+
+    if (!userData.estado) {
+      throw new Error(userData.mensaje || 'Error al procesar usuario')
+    }
+
+    return { userId: extractedUserId, userData }
+  }
+
+  const handleMedicoCreation = async (userId) => {
+    const payload = {
+      ...(isEdit && medico?._id && { id: medico._id }),
+      nombre: client.nombre,
+      documento: Number(client.documento),
+      telefono: Number(client.telefono),
+      especialidad: client.especialidad,
+      ...(!isEdit && { idUsuario: userId }),
+    }
+
+    const endpoint = isEdit && medico?._id ? 'medico/update' : 'medico/create'
+    const method = isEdit && medico?._id ? 'PUT' : 'POST'
+
+    const res = await fetch(`${apiEndpoint}${endpoint}`, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(errorData.message || errorData.error || 'Error al crear/actualizar médico')
+    }
+
+    const data = await res.json()
+    if (!data.estado) {
+      throw new Error(data.mensaje || 'Error al procesar médico')
+    }
+
+    return data
+  }
+
+  const handleError = async (error, userId) => {
+    console.error('Error completo:', error)
+
+    // Si tenemos un usuario creado pero falló el médico, hacemos rollback
+    if (userId && !isEdit) {
+      try {
+        await fetch(`${apiEndpoint}user/delete`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: userId }),
+        })
+      } catch (rollbackError) {
+        console.error('Error en rollback:', rollbackError)
+      }
+    }
+
+    const errorMessage = error.message || '¡Error desconocido!'
+    Swal.fire('Error', errorMessage, 'error')
+
+    // Determinar qué paso mostrar basado en el error
+    if (errorMessage.toLowerCase().includes('usuario')) {
+      setStep(1)
+    } else if (
+      errorMessage.toLowerCase().includes('médico') ||
+      errorMessage.toLowerCase().includes('medico')
+    ) {
+      setStep(2)
+    }
+  }
+
+  // Funciones utilitarias
+  const extractUserId = (userData, fallbackId) => {
+    return (
+      userData.data?._id ||
+      userData._id ||
+      userData.id ||
+      (userData.usuario && userData.usuario._id) ||
+      fallbackId
+    )
+  }
+
+  const showSuccess = () => {
+    Swal.fire(
+      'Éxito',
+      `Información ${isEdit ? 'actualizada' : 'registrada'} correctamente`,
+      'success',
+    )
+    onSuccess()
+  }
+
+  const resetForm = () => {
+    setVisible(false)
+    setStep(1)
+    setClient(initialClient)
+    setUser(initialUser)
+    setErrors({})
+  }
+
+  /* --------------------------------------------------------------- */
+
+  /*  const handleSubmit = async () => {
     setSubmitting(true)
     try {
       let userId = medico?.idUsuario?._id || medico?.idUsuario || null
@@ -209,7 +379,6 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
       // 1. Crear o actualizar usuario
       let userRes
       if (isEdit && userId) {
-        console.log(userId)
         // Actualizar usuario (PUT)
         const userPayload = {
           id: userId,
@@ -221,7 +390,6 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
         if (user.password && user.password.trim() !== '') {
           userPayload.password = user.password
         }
-        console.log(userPayload)
         userRes = await fetch(`${apiEndpoint}user/update`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -255,7 +423,11 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
         (userData.usuario && userData.usuario?._id) ||
         userId
 
-      if (!idUsuario) throw new Error('No se obtuvo el idUsuario del medico.' + idUsuario)
+      if (!userData.estado) {
+        throw new Error(`${userData.mensaje}`)
+      } else if (!idUsuario) {
+        throw new Error('No se obtuvo el idUsuario del medico.' + idUsuario)
+      }
 
       // 2. Crear o actualizar medico
       let clientRes
@@ -294,7 +466,12 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
         throw new Error(`Error al crear/actualizar el medico: ${msg}`)
       }
 
-      await clientRes.json()
+      const clientData = await clientRes.json()
+      console.log(clientData)
+
+      if (!clientData.estado) {
+        throw new Error(`${clientData.mensaje}`)
+      }
 
       Swal.fire(
         'Éxito',
@@ -319,7 +496,7 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     } finally {
       setSubmitting(false)
     }
-  }
+  } */
 
   const handleNext = () => {
     if (step === 1 && validateClient()) setStep(2)
@@ -463,7 +640,7 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
                   type="text"
                   value={user.username}
                   invalid={!!errors.username}
-                  valid={!errors.username && client.username}
+                  valid={!errors.username && user.username}
                   onChange={(e) => setUser({ ...user, username: e.target.value })}
                 />
                 {errors.username ? (
@@ -478,7 +655,7 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
                   type="email"
                   value={user.email}
                   invalid={!!errors.email}
-                  valid={!errors.email && client.email}
+                  valid={!errors.email && user.email}
                   onChange={(e) => setUser({ ...user, email: e.target.value })}
                 />
                 {errors.email ? (
@@ -493,7 +670,7 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
                   type="password"
                   value={user.password}
                   invalid={!!errors.password}
-                  valid={!errors.password && client.password}
+                  valid={!errors.password && user.password}
                   onChange={(e) => setUser({ ...user, password: e.target.value })}
                 />
                 {errors.password ? (
@@ -508,7 +685,7 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
                   type="password"
                   value={user.confirmPassword}
                   invalid={!!errors.confirmPassword}
-                  valid={!errors.confirmPassword && client.confirmPassword}
+                  valid={!errors.confirmPassword && user.confirmPassword}
                   onChange={(e) => setUser({ ...user, confirmPassword: e.target.value })}
                 />
                 {errors.confirmPassword ? (
