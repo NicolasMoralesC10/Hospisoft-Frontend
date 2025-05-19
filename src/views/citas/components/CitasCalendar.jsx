@@ -1,11 +1,11 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 
 import CitaModal from './CitaModal'
 
-const CitasCalendar = () => {
+const CitasCalendar = ({ apiEndpoint }) => {
   const calendarRef = useRef(null)
 
   // Estado para controlar modal
@@ -14,10 +14,33 @@ const CitasCalendar = () => {
   const [citaActual, setCitaActual] = useState(null)
 
   // Estado para eventos (citas)
-  const [eventos, setEventos] = useState([
-    { id: '1', title: 'Cita 1', date: '2025-05-20', description: 'Descripción 1' },
-    { id: '2', title: 'Cita 2', date: '2025-05-22', description: 'Descripción 2' },
-  ])
+  const [eventos, setEventos] = useState([])
+
+  /* const fetchCitas = async () => {
+    try {
+      const res = await fetch(`${apiEndpoint}/list`)
+      if (!res.ok) throw new Error(res.statusText)
+      const json = await res.json()
+      setData(json.data || [])
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  } */
+
+  useEffect(() => {
+    fetch(`${apiEndpoint}/list`) // Ajusta la URL a tu endpoint real
+      .then((res) => res.json())
+      .then((data) => {
+        // data debe ser un array de eventos ya adaptados (id, title, start, extendedProps)
+        setEventos(data)
+      })
+      .catch((error) => {
+        console.error('Error cargando citas:', error)
+      })
+    /* fetchCitas() */
+  }, [])
 
   // Al hacer clic en una fecha para agregar cita
   const handleDateClick = (arg) => {
@@ -44,24 +67,48 @@ const CitasCalendar = () => {
   }
 
   // Guardar cita (agregar o editar)
-  const handleSaveCita = (data) => {
-    if (modalModo === 'agregar') {
-      // Crear nuevo ID simple (en producción usar UUID o backend)
-      const newId = (eventos.length + 1).toString()
+  const handleSaveCita = async (data) => {
+    try {
+      if (modalModo === 'agregar') {
+        // Llamada POST a backend para crear cita
+        const res = await fetch(`${apiEndpoint}/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        })
+        if (!res.ok) throw new Error('Error al crear la cita')
+        const nuevaCita = await res.json()
+        setEventos((prev) => [...prev, nuevaCita])
+
+        // Crear nuevo ID simple (en producción usar UUID o backend)
+        /* const newId = (eventos.length + 1).toString()
       setEventos((prev) => [
         ...prev,
         { id: newId, title: data.title, date: data.date, description: data.description },
-      ])
-    } else if (modalModo === 'editar') {
-      setEventos((prev) =>
-        prev.map((evt) =>
-          evt.id === citaActual.id
-            ? { ...evt, title: data.title, date: data.date, description: data.description }
-            : evt,
-        ),
-      )
+      ]) */
+      } else if (modalModo === 'editar') {
+        // Llamada PUT/PATCH para actualizar cita (debes implementar endpoint)
+        const res = await fetch(`${apiEndpoint}/update`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        })
+        if (!res.ok) throw new Error('Error al actualizar la cita')
+        const citaActualizada = await res.json()
+        setEventos((prev) => prev.map((evt) => (evt.id === citaActual.id ? citaActualizada : evt)))
+
+        setEventos((prev) =>
+          prev.map((evt) =>
+            evt.id === citaActual.id
+              ? { ...evt, title: data.title, date: data.date, description: data.description }
+              : evt,
+          ),
+        )
+      }
+      setModalVisible(false)
+    } catch (error) {
+      alert(error.message)
     }
-    setModalVisible(false)
   }
 
   // Cerrar modal sin guardar

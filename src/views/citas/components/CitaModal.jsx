@@ -13,10 +13,9 @@ import {
 } from '@coreui/react'
 
 const initialCita = {
-  paciente: '',
-  medico: '',
-  fecha: '',
-  descripcion: '',
+  title: '',
+  date: '',
+  description: '',
 }
 
 const CitaModal = ({ visible, onClose, onSave, initialData = {}, modo = 'agregar' }) => {
@@ -53,7 +52,7 @@ const CitaModal = ({ visible, onClose, onSave, initialData = {}, modo = 'agregar
       <CForm onSubmit={handleSubmit}>
         <CModalBody>
           <CFormLabel>Título</CFormLabel>
-          <CFormInput name="title" value={setCita.title} onChange={handleChange} required />
+          <CFormInput name="title" value={cita.title} onChange={handleChange} required />
           <CFormLabel className="mt-2">Fecha y hora</CFormLabel>
           <CFormInput
             type="datetime-local"
@@ -65,7 +64,7 @@ const CitaModal = ({ visible, onClose, onSave, initialData = {}, modo = 'agregar
           <CFormLabel className="mt-2">Descripción</CFormLabel>
           <CFormTextarea
             name="description"
-            value={cita.descripcion}
+            value={cita.description}
             onChange={handleChange}
             rows={3}
           />
