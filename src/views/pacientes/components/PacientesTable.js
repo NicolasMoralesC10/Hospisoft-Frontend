@@ -37,7 +37,7 @@ const columns = [
   },
   { accessorKey: 'epsPaciente', header: 'EPS' },
   { accessorKey: 'estadoCivil', header: 'Estado Civil' },
-  { accessorKey: 'idUsuario.emailUser', header: 'correo' },
+  { accessorKey: 'idUsuario.email', header: 'correo' },
   { accessorKey: 'direccion', header: 'Dirección' },
   {
     accessorKey: 'status',

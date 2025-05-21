@@ -1,6 +1,4 @@
-// src/components/PacienteTimelineModal.jsx
-import React, { useState } from 'react'
-import { useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import Swal from 'sweetalert2'
 import {
   CModal,
@@ -22,16 +20,6 @@ import {
 import { User, Lock, Drill } from 'lucide-react'
 
 const initialClient = {
-  nombre: '',
-  documento: '',
-  telefono: '',
-  nacimiento: '',
-  eps: '',
-  estadoCivil: '',
-  sexo: '',
-  direccion: '',
-}
-const initialUser = {
   username: '',
   email: '',
   password: '',
@@ -39,7 +27,7 @@ const initialUser = {
   rol: '',
 }
 
-const PacienteTimelineModal = ({
+const MedicamentosTimelineModal = ({
   visible,
   setVisible,
   apiEndpoint,
@@ -92,61 +80,11 @@ const PacienteTimelineModal = ({
         sexo: paciente.sexo,
         direccion: paciente.direccion,
       })
-      if (paciente.idUsuario) {
-        setUser({
-          username: paciente.idUsuario.username,
-          email: paciente.idUsuario.email,
-          password: '', // Por seguridad, no mostrar la password
-          confirmPassword: '',
-        })
-      }
     } else {
       // Si es creación, se limpian los formularios
       setClient(initialClient)
-      setUser(initialUser)
     }
   }, [apiEndpoint, visible])
-
-  const validateUser = () => {
-    const errs = {}
-    if (!user.username || user.username.trim() === '') errs.username = 'Usuario es requerido'
-    if (!user.email || user.email.trim() === '') {
-      errs.email = 'Email es requerido'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)) {
-      errs.email = 'Debe ser un correo válido'
-    }
-    if (!isEdit) {
-      if (!user.password || user.password.trim() === '') {
-        errs.password = 'Contraseña es requerida'
-      } else if (user.password.length < 7) {
-        errs.password = 'La contraseña debe tener al menos 7 caracteres'
-      }
-
-      if (!user.confirmPassword) errs.confirmPassword = 'Confirmar contraseña es requerida'
-      else if (user.password !== user.confirmPassword)
-        errs.confirmPassword = 'Las contraseñas no coinciden'
-      if (!user.rol) errs.rol = 'Rol es requerido'
-    } else {
-      // En edición, password y confirmPassword son opcionales
-      // Pero si uno de los dos está lleno, ambos deben coincidir y no estar vacíos
-      const passwordFilled = user.password && user.password.trim() !== ''
-      const confirmFilled = user.confirmPassword && user.confirmPassword.trim() !== ''
-      if (passwordFilled || confirmFilled) {
-        if (!passwordFilled) {
-          errs.password = 'Contraseña es requerida si desea cambiarla'
-        }
-        if (!confirmFilled) {
-          errs.confirmPassword = 'Debe confirmar la contraseña si desea cambiarla'
-        }
-        if (passwordFilled && confirmFilled && user.password !== user.confirmPassword) {
-          errs.confirmPassword = 'Las contraseñas no coinciden'
-        }
-      }
-    }
-
-    setErrors(errs)
-    return Object.keys(errs).length === 0
-  }
 
   const validateClient = () => {
     const errs = {}
@@ -165,56 +103,12 @@ const PacienteTimelineModal = ({
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
-      let userId = paciente?.idUsuario?._id || paciente?.idUsuario || null
-
-      let userRes
-      if (isEdit && userId) {
-        const userPayload = {
-          id: userId,
-          username: user.username,
-          email: user.email,
-          rol: user.rol,
-        }
-        // Solo incluir password si no está vacío ni es solo espacios
-        if (user.password && user.password.trim() !== '') {
-          userPayload.password = user.password
-        }
-        console.log(user.password)
-        userRes = await fetch(`${apiEndpoint}user/update`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userPayload),
-        })
-      } else {
-        userRes = await fetch(`${apiEndpoint}user/create`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: user.username,
-            email: user.email,
-            password: user.password,
-            rol: user.rol,
-          }),
-        })
-      }
-
-      if (!userRes.ok) {
-        const msg = await userRes.text()
-        throw new Error(`Error al crear usuario: ${msg}`)
-      }
-
-      const userData = await userRes.json()
-      const idUsuario = userData._id || userData.id || (userData.data && userData.data._id)
-      if (!idUsuario) throw new Error('No se obtuvo idUsuario del paciente')
-
-      let pacienteId = paciente?._id || null
       let clientRes
       if (isEdit && paciente?._id) {
         clientRes = await fetch(`${apiEndpoint}patient/update`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: pacienteId,
             nombre: client.nombre,
             documento: client.documento,
             telefono: client.telefono,
@@ -245,7 +139,6 @@ const PacienteTimelineModal = ({
       setVisible(false)
       setStep(1)
       setClient(initialClient)
-      setUser(initialUser)
       setErrors({})
     } catch (error) {
       const mensaje = error.message || 'Error desconocido'
@@ -539,4 +432,4 @@ const PacienteTimelineModal = ({
   )
 }
 
-export default PacienteTimelineModal
+export default MedicamentosTimelineModal

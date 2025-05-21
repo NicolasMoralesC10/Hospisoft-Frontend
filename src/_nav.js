@@ -14,6 +14,7 @@ import {
   cilSpeedometer,
   cilStar,
   cilUserFollow,
+  cilMedicalCross,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
@@ -33,7 +34,17 @@ const _nav = [
     name: 'Pacientes',
     to: '/pacientes',
     icon: <CIcon icon={cilUserFollow} customClassName="nav-icon" />,
-/*     badge: {
+    /*     badge: {
+      color: 'info',
+      text: 'NEW',
+    }, */
+  },
+  {
+    component: CNavItem,
+    name: 'Medicamentos',
+    to: '/medicamentos',
+    icon: <CIcon icon={cilMedicalCross} customClassName="nav-icon" />,
+    /*     badge: {
       color: 'info',
       text: 'NEW',
     }, */
