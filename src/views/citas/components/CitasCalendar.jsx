@@ -12,56 +12,110 @@ const CitasCalendar = ({ apiEndpoint }) => {
   const [modalVisible, setModalVisible] = useState(false)
   const [modalModo, setModalModo] = useState('agregar') // 'agregar' o 'editar'
   const [citaActual, setCitaActual] = useState(null)
+  const [pacientes, setPacientes] = useState([])
+  const [medicos, setMedicos] = useState([])
 
   // Estado para eventos (citas)
   const [eventos, setEventos] = useState([])
 
-  /* const fetchCitas = async () => {
-    try {
-      const res = await fetch(`${apiEndpoint}/list`)
-      if (!res.ok) throw new Error(res.statusText)
-      const json = await res.json()
-      setData(json.data || [])
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  } */
-
+  /* Cargar selects, pacientes y medicos */
   useEffect(() => {
-    fetch(`${apiEndpoint}/list`) // Ajusta la URL a tu endpoint real
+    fetch('http://127.0.0.1:3000/api/patient/list')
       .then((res) => res.json())
-      .then((data) => {
-        // data debe ser un array de eventos ya adaptados (id, title, start, extendedProps)
-        setEventos(data)
+      .then((response) => {
+        if (response.estado && Array.isArray(response.data)) {
+          setPacientes(response.data)
+        } else {
+          setPacientes([])
+          console.error('Respuesta inesperada de pacientes:', response)
+        }
+      })
+      .catch((error) => {
+        console.error('Error cargando pacientes:', error)
+        setPacientes([])
+      })
+
+    fetch('http://127.0.0.1:3000/api/medico/list')
+      .then((res) => res.json())
+      .then((response) => {
+        if (response.estado && Array.isArray(response.data)) {
+          setMedicos(response.data)
+        } else {
+          setMedicos([])
+          console.error('Respuesta inesperada de médicos:', response)
+        }
+      })
+      .catch((error) => {
+        console.error('Error cargando médicos:', error)
+        setMedicos([])
+      })
+  }, [])
+
+  /* Renderizar citas en el calendario */
+  useEffect(() => {
+    fetch(`${apiEndpoint}/list`)
+      .then((res) => res.json())
+      .then((response) => {
+        if (response.estado && Array.isArray(response.data)) {
+          setEventos(response.data) // Eventos ya adaptados para FullCalendar desde el back
+        } else {
+          setEventos([])
+          console.error('Respuesta inesperada de citas:', response)
+        }
       })
       .catch((error) => {
         console.error('Error cargando citas:', error)
+        setEventos([])
       })
-    /* fetchCitas() */
-  }, [])
+  }, [apiEndpoint])
 
   // Al hacer clic en una fecha para agregar cita
   const handleDateClick = (arg) => {
-    setModalModo('agregar')
-    setCitaActual({
-      title: '',
-      date: arg.dateStr + 'T09:00', // Puedes ajustar la hora por defecto
-      description: '',
-    })
-    setModalVisible(true)
+    const clickedDate = new Date(arg.dateStr)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // Solo fecha, sin hora
+
+    if (clickedDate >= today) {
+      setModalModo('agregar')
+      setCitaActual({
+        fecha: arg.dateStr + 'T09:00', // fecha en formato datetime-local
+        descripcion: '',
+        idPaciente: '',
+        idMedico: '',
+        status: 1,
+      })
+      setModalVisible(true)
+    }
   }
 
   // Al hacer clic en un evento para editar cita
-  const handleEventClick = (clickInfo) => {
+  /* const handleEventClick = (clickInfo) => {
     const event = clickInfo.event
+    const props = event.extendedProps || {}
+
     setModalModo('editar')
     setCitaActual({
       id: event.id,
-      title: event.title,
-      date: event.startStr,
-      description: event.extendedProps.description || '',
+      fecha: event.startStr ? event.startStr.slice(0, 16) : '',
+      descripcion: props.descripcion || '',
+      idPaciente: props.idPaciente || '',
+      idMedico: props.idMedico || '',
+      status: typeof props.status === 'number' ? props.status : 1,
+    })
+    setModalVisible(true)
+  } */
+  const handleEventClick = (clickInfo) => {
+    const event = clickInfo.event
+    const props = event.extendedProps || {}
+
+    setModalModo('editar')
+    setCitaActual({
+      id: event.id,
+      fecha: event.startStr ? event.startStr.slice(0, 16) : '',
+      descripcion: event.title,
+      idPaciente: props.paciente?._id || '',
+      idMedico: props.medico?._id || '',
+      status: props.status || 1,
     })
     setModalVisible(true)
   }
@@ -70,39 +124,26 @@ const CitasCalendar = ({ apiEndpoint }) => {
   const handleSaveCita = async (data) => {
     try {
       if (modalModo === 'agregar') {
-        // Llamada POST a backend para crear cita
         const res = await fetch(`${apiEndpoint}/create`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         })
         if (!res.ok) throw new Error('Error al crear la cita')
-        const nuevaCita = await res.json()
-        setEventos((prev) => [...prev, nuevaCita])
+        const nuevoEvento = await res.json() // Evento adaptado desde el back
 
-        // Crear nuevo ID simple (en producción usar UUID o backend)
-        /* const newId = (eventos.length + 1).toString()
-      setEventos((prev) => [
-        ...prev,
-        { id: newId, title: data.title, date: data.date, description: data.description },
-      ]) */
+        setEventos((prev) => [...prev, nuevoEvento])
       } else if (modalModo === 'editar') {
-        // Llamada PUT/PATCH para actualizar cita (debes implementar endpoint)
         const res = await fetch(`${apiEndpoint}/update`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         })
         if (!res.ok) throw new Error('Error al actualizar la cita')
-        const citaActualizada = await res.json()
-        setEventos((prev) => prev.map((evt) => (evt.id === citaActual.id ? citaActualizada : evt)))
+        const eventoActualizado = await res.json() // Evento adaptado desde el back
 
         setEventos((prev) =>
-          prev.map((evt) =>
-            evt.id === citaActual.id
-              ? { ...evt, title: data.title, date: data.date, description: data.description }
-              : evt,
-          ),
+          prev.map((evt) => (evt.id === eventoActualizado.id ? eventoActualizado : evt)),
         )
       }
       setModalVisible(false)
@@ -135,6 +176,8 @@ const CitasCalendar = ({ apiEndpoint }) => {
         onSave={handleSaveCita}
         initialData={citaActual}
         modo={modalModo}
+        pacientes={pacientes}
+        medicos={medicos}
       />
     </>
   )

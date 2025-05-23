@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import Select from 'react-select'
 import {
   CButton,
   CModal,
@@ -13,35 +14,96 @@ import {
 } from '@coreui/react'
 
 const initialCita = {
-  title: '',
-  date: '',
-  description: '',
+  fecha: '', // solo fecha YYYY-MM-DD
+  hora: '09:00', // hora por defecto HH:mm
+  descripcion: '',
+  idPaciente: '',
+  idMedico: '',
+  status: 1,
 }
 
-const CitaModal = ({ visible, onClose, onSave, initialData = {}, modo = 'agregar' }) => {
+const CitaModal = ({
+  visible,
+  onClose,
+  onSave,
+  initialData = {},
+  modo = 'agregar',
+  pacientes = [],
+  medicos = [],
+}) => {
   const [cita, setCita] = useState(initialCita)
+
+  // Opciones para React Select
+  const opcionesPacientes = pacientes.map((pac) => ({
+    value: pac._id,
+    label: pac.nombrePaciente,
+  }))
+
+  const opcionesMedicos = medicos.map((med) => ({
+    value: med._id,
+    label: med.nombre,
+  }))
+
+  // Estados para paciente y médico seleccionados (objetos con value y label)
+  const [pacienteSeleccionado, setPacienteSeleccionado] = useState(null)
+  const [medicoSeleccionado, setMedicoSeleccionado] = useState(null)
 
   useEffect(() => {
     if (initialData) {
-      setCita({
-        title: initialData.title || '',
-        date: initialData.date || '',
-        description: initialData.description || '',
-      })
-    }
-  }, [initialData, visible])
+      let fecha = ''
+      let hora = '09:00'
+      if (initialData.fecha) {
+        fecha = initialData.fecha.slice(0, 10)
+        hora = initialData.fecha.slice(11, 16)
+      }
 
+      setCita({
+        fecha,
+        hora,
+        descripcion: initialData.descripcion || '',
+        idPaciente: initialData.idPaciente || '',
+        idMedico: initialData.idMedico || '',
+        status: typeof initialData.status === 'number' ? initialData.status : 1,
+      })
+
+      // Set paciente seleccionado
+      const pacienteSel =
+        opcionesPacientes.find((opt) => opt.value === initialData.idPaciente) || null
+      setPacienteSeleccionado(pacienteSel)
+
+      // Set médico seleccionado
+      const medicoSel = opcionesMedicos.find((opt) => opt.value === initialData.idMedico) || null
+      setMedicoSeleccionado(medicoSel)
+    }
+  }, [initialData, visible, pacientes, medicos])
+
+  // Manejo de cambios para inputs
   const handleChange = (e) => {
     const { name, value } = e.target
     setCita((prev) => ({
-      ...prev,
-      [name]: value,
+      ...prev, // Copia las propiedades del estado anterior
+      [name]: value, // Sobrescribe la propiedad cuyo nombre es [name] con el nuevo value
     }))
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSave(cita)
+    if (!pacienteSeleccionado || !medicoSeleccionado) {
+      alert('Debe seleccionar paciente y médico')
+      return
+    }
+    // Combinar fecha y hora en un solo campo ISO
+    const fechaCompleta = new Date(`${cita.fecha}T${cita.hora}:00`).toISOString()
+
+    // Construir payload sin 'hora'
+    const payload = {
+      descripcion: cita.descripcion,
+      fecha: fechaCompleta,
+      idPaciente: pacienteSeleccionado.value,
+      idMedico: medicoSeleccionado.value,
+    }
+
+    onSave(payload)
   }
 
   return (
@@ -51,24 +113,40 @@ const CitaModal = ({ visible, onClose, onSave, initialData = {}, modo = 'agregar
       </CModalHeader>
       <CForm onSubmit={handleSubmit}>
         <CModalBody>
-          <CFormLabel>Título</CFormLabel>
-          <CFormInput name="title" value={cita.title} onChange={handleChange} required />
-          <CFormLabel className="mt-2">Fecha y hora</CFormLabel>
-          <CFormInput
-            type="datetime-local"
-            name="date"
-            value={cita.date}
-            onChange={handleChange}
-            required
-          />
+          <CFormLabel>Fecha</CFormLabel>
+          <CFormInput type="date" name="fecha" value={cita.fecha} readOnly />
+
+          <CFormLabel className="mt-2">Hora</CFormLabel>
+          <CFormInput type="time" name="hora" value={cita.hora} onChange={handleChange} required />
+
           <CFormLabel className="mt-2">Descripción</CFormLabel>
           <CFormTextarea
-            name="description"
-            value={cita.description}
+            name="descripcion"
+            value={cita.descripcion}
             onChange={handleChange}
             rows={3}
+            required
+          />
+
+          <CFormLabel className="mt-2">Paciente</CFormLabel>
+          <Select
+            options={opcionesPacientes}
+            value={pacienteSeleccionado}
+            onChange={setPacienteSeleccionado}
+            placeholder="Seleccione un paciente"
+            isClearable
+          />
+
+          <CFormLabel className="mt-2">Médico</CFormLabel>
+          <Select
+            options={opcionesMedicos}
+            value={medicoSeleccionado}
+            onChange={setMedicoSeleccionado}
+            placeholder="Seleccione un médico"
+            isClearable
           />
         </CModalBody>
+
         <CModalFooter>
           <CButton color="secondary" onClick={onClose}>
             Cancelar
