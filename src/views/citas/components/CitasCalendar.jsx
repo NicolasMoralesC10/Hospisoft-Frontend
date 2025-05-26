@@ -41,7 +41,7 @@ const CitasCalendar = ({ apiEndpoint }) => {
 
   /* Cargar selects, pacientes y medicos */
   useEffect(() => {
-    fetch('http://185.254.206.90:4001/api/patient/list')
+    fetch('https://185.254.206.90:4080/api/patient/list')
       .then((res) => res.json())
       .then((response) => {
         if (response.estado && Array.isArray(response.data)) {
@@ -56,7 +56,7 @@ const CitasCalendar = ({ apiEndpoint }) => {
         setPacientes([])
       })
 
-    fetch('http://185.254.206.90:4001/api/medico/list')
+    fetch('https://185.254.206.90:4080/api/medico/list')
       .then((res) => res.json())
       .then((response) => {
         if (response.estado && Array.isArray(response.data)) {

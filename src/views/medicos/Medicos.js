@@ -6,7 +6,7 @@ const VistaMedicos = () => {
   return (
     <CRow>
       <CCol xs={12} className="mb-4">
-        <MedicoTable apiEndpoint="http://185.254.206.90:4001/api/medico/list" />
+        <MedicoTable apiEndpoint="https://185.254.206.90:4080/api/medico/list" />
       </CCol>
     </CRow>
   )

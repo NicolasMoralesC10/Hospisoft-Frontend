@@ -281,7 +281,7 @@ const PacientesTable = ({ apiEndpoint }) => {
         setVisible={setModalVisible}
         paciente={editingPaciente}
         isEdit={!!editingPaciente}
-        apiEndpoint="http://185.254.206.90:4001/api/"
+        apiEndpoint="https://185.254.206.90:4080/api/"
         onSuccess={fetchPacientes}
       />
     </>
