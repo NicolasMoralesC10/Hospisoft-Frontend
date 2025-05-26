@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import Swal from 'sweetalert2'
 import Select from 'react-select'
 import {
   CButton,
@@ -33,7 +34,7 @@ const CitaModal = ({
 }) => {
   const [cita, setCita] = useState(initialCita)
 
-  // Opciones para React Select
+  // Cargar React Select
   const opcionesPacientes = pacientes.map((pac) => ({
     value: pac._id,
     label: pac.nombrePaciente,
@@ -89,26 +90,32 @@ const CitaModal = ({
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!pacienteSeleccionado || !medicoSeleccionado) {
-      alert('Debe seleccionar paciente y médico')
-      return
-    }
-    // Combinar fecha y hora en un solo campo ISO
-    const fechaCompleta = new Date(`${cita.fecha}T${cita.hora}:00`).toISOString()
+      Swal.fire({
+        icon: 'error',
+        title: '¡Error!',
+        text: 'Debe seleccionar paciente y médico.',
+      })
+    } else {
+      // Combinar fecha y hora en un solo campo ISO
+      const fechaCompleta = new Date(`${cita.fecha}T${cita.hora}:00`).toISOString()
 
-    // Construir payload sin 'hora'
-    const payload = {
-      descripcion: cita.descripcion,
-      fecha: fechaCompleta,
-      idPaciente: pacienteSeleccionado.value,
-      idMedico: medicoSeleccionado.value,
+      // Construir payload sin 'hora'
+      const payload = {
+        fecha: fechaCompleta,
+        descripcion: cita.descripcion,
+        idPaciente: pacienteSeleccionado.value,
+        idMedico: medicoSeleccionado.value,
+      }
+      if (modo === 'editar' && initialData?.id) {
+        payload.id = initialData.id
+      }
+      onSave(payload)
     }
-
-    onSave(payload)
   }
 
   return (
     <CModal visible={visible} onClose={onClose}>
-      <CModalHeader onClose={onClose}>
+      <CModalHeader onClose={onClose} className="bg-primary text-light">
         <CModalTitle>{modo === 'agregar' ? 'Agregar Cita' : 'Editar Cita'}</CModalTitle>
       </CModalHeader>
       <CForm onSubmit={handleSubmit}>
@@ -147,7 +154,7 @@ const CitaModal = ({
           />
         </CModalBody>
 
-        <CModalFooter>
+        <CModalFooter className="bg-primary">
           <CButton color="secondary" onClick={onClose}>
             Cancelar
           </CButton>

@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react'
+import Swal from 'sweetalert2'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
@@ -8,7 +9,7 @@ import CitaModal from './CitaModal'
 const CitasCalendar = ({ apiEndpoint }) => {
   const calendarRef = useRef(null)
 
-  // Estado para controlar modal
+  // Estado para la controlar modal
   const [modalVisible, setModalVisible] = useState(false)
   const [modalModo, setModalModo] = useState('agregar') // 'agregar' o 'editar'
   const [citaActual, setCitaActual] = useState(null)
@@ -17,6 +18,26 @@ const CitasCalendar = ({ apiEndpoint }) => {
 
   // Estado para eventos (citas)
   const [eventos, setEventos] = useState([])
+
+  const cargarEventos = async () => {
+    try {
+      const res = await fetch(`${apiEndpoint}/list`)
+      const response = await res.json()
+      if (response.estado && Array.isArray(response.data)) {
+        setEventos(response.data)
+      } else {
+        setEventos([])
+        console.error('Respuesta inesperada de citas:', response)
+      }
+    } catch (error) {
+      console.error('Error cargando citas:', error)
+      setEventos([])
+    }
+  }
+
+  useEffect(() => {
+    cargarEventos()
+  }, [apiEndpoint])
 
   /* Cargar selects, pacientes y medicos */
   useEffect(() => {
@@ -129,22 +150,68 @@ const CitasCalendar = ({ apiEndpoint }) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         })
-        if (!res.ok) throw new Error('Error al crear la cita')
-        const nuevoEvento = await res.json() // Evento adaptado desde el back
 
-        setEventos((prev) => [...prev, nuevoEvento])
+        const response = await res.json()
+
+        // Si la cita ya existe, muestra el mensaje del backend
+        if (
+          !response.estado &&
+          (response.tipoError === 'duplicado' ||
+            response.tipoError === 'duplicado_paciente' ||
+            response.tipoError === 'duplicado_medico')
+        ) {
+          Swal.fire({
+            icon: 'error',
+            title: '¡Cita duplicada!',
+            text: response.mensaje,
+          })
+          return // return para no cerrar el modal, ni recargar eventos
+        }
+
+        if (!res.ok) throw new Error('Error al crear la cita')
+
+        await cargarEventos()
+
+        Swal.fire({
+          icon: 'success',
+          title: '¡Cita creada!',
+          text: 'La cita se ha registrado correctamente.',
+          timer: 2000,
+          showConfirmButton: false,
+        })
       } else if (modalModo === 'editar') {
         const res = await fetch(`${apiEndpoint}/update`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         })
-        if (!res.ok) throw new Error('Error al actualizar la cita')
-        const eventoActualizado = await res.json() // Evento adaptado desde el back
 
-        setEventos((prev) =>
-          prev.map((evt) => (evt.id === eventoActualizado.id ? eventoActualizado : evt)),
-        )
+        const response = await res.json()
+
+        // Si la cita ya existe, muestra el mensaje del backend
+        if (
+          !response.estado &&
+          (response.tipoError === 'duplicado' ||
+            response.tipoError === 'duplicado_paciente' ||
+            response.tipoError === 'duplicado_medico')
+        ) {
+          Swal.fire({
+            icon: 'error',
+            title: '¡Cita duplicada!',
+            text: response.mensaje,
+          })
+          return // return para no cerrar el modal, ni recargar eventos
+        }
+        if (!res.ok) throw new Error('Error al actualizar la cita')
+
+        await cargarEventos()
+        Swal.fire({
+          icon: 'success',
+          title: '¡Cita actualizada!',
+          text: 'La cita se ha actualizado correctamente.',
+          timer: 2000,
+          showConfirmButton: false,
+        })
       }
       setModalVisible(false)
     } catch (error) {
