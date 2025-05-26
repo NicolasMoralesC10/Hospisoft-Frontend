@@ -124,14 +124,15 @@ const PacientesTable = ({ apiEndpoint }) => {
       cancelButtonText: 'Cancelar',
     })
     if (result.isConfirmed) {
+      const apiEndpointDelete = apiEndpoint.replace('list', 'delet')
       try {
-        const res = await fetch(apiEndpoint + 'patient/delet', {
-          method: 'PUT',
+        const res = await fetch(`${apiEndpointDelete}`, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id }),
         })
         if (!res.ok) throw new Error('Error al eliminar')
-        await fetchPacientes()
+        setData((prev) => prev.filter((p) => p._id !== id))
         Swal.fire('Eliminado!', 'El paciente ha sido eliminado.', 'success')
       } catch (err) {
         Swal.fire('Error', `No se pudo eliminar: ${err.message}`, 'error')
@@ -143,7 +144,7 @@ const PacientesTable = ({ apiEndpoint }) => {
   const table = useReactTable({
     data,
     columns,
-    meta: { handleDelete, handleEdit },
+    meta: { handleDelete },
     initialState: {
       pagination: { pageIndex: 0, pageSize: 5 },
       globalFilter: '',
@@ -186,13 +187,7 @@ const PacientesTable = ({ apiEndpoint }) => {
       <CCard className="mb-4 shadow-sm">
         <CCardHeader className="d-flex justify-content-between align-items-center bg-primary text-white">
           <strong>Pacientes</strong>
-          <CButton
-            color="light"
-            onClick={() => {
-              setModalVisible(true)
-              setEditingPaciente(null)
-            }}
-          >
+          <CButton color="light" onClick={() => setModalVisible(true)}>
             + Nuevo Paciente
           </CButton>
         </CCardHeader>
@@ -279,10 +274,7 @@ const PacientesTable = ({ apiEndpoint }) => {
       <PacienteTimelineModal
         visible={modalVisible}
         setVisible={setModalVisible}
-        paciente={editingPaciente}
-        isEdit={!!editingPaciente}
-        apiEndpoint="http://127.0.0.1:3000/api/"
-        onSuccess={fetchPacientes}
+        onSubmit={handleCreate}
       />
     </>
   )

@@ -134,28 +134,73 @@ const MedicosTable = ({ apiEndpoint }) => {
 
   // Función de eliminar
   const handleDelete = async (id) => {
-    const result = await Swal.fire({
+    // Mostrar confirmación antes de eliminar
+    const confirmResult = await Swal.fire({
       title: '¿Estás seguro?',
-      text: 'Esta acción eliminará al medico permanentemente.',
+      text: 'Esta acción eliminará al médico y su usuario asociado permanentemente.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
     })
-    if (result.isConfirmed) {
-      const apiEndpointDelete = apiEndpoint.replace('list', 'delete')
-      try {
-        const res = await fetch(`${apiEndpointDelete}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id }),
-        })
-        if (!res.ok) throw new Error('Error al eliminar')
-        setData((prev) => prev.filter((p) => p._id !== id))
-        Swal.fire('Eliminado', 'Medico eliminado correctamente', 'success')
-      } catch (err) {
-        Swal.fire('Error', `No se pudo eliminar: ${err.message}`, 'error')
+
+    if (!confirmResult.isConfirmed) return
+
+    try {
+      // Primero, obtener los datos del médico para extraer el idUsuario
+      const apiRoot = apiEndpoint.substring(0, apiEndpoint.lastIndexOf('/'))
+      const apiEndpointSearchMedico = `${apiRoot}/search/${id}`
+
+      const getMedicoResponse = await fetch(apiEndpointSearchMedico)
+
+      if (!getMedicoResponse.ok) {
+        throw new Error('Error al obtener información del médico.')
       }
+
+      const medicoData = await getMedicoResponse.json()
+
+      if (!medicoData.estado || !medicoData.result) {
+        throw new Error('No se encontró información del médico.')
+      }
+
+      const userId = medicoData.result.idUsuario._id // Accedemos al _id del usuario populado
+
+      if (!userId) {
+        throw new Error('No se encontró el usuario asociado al médico.')
+      }
+
+      // Eliminar médico
+      const apiEndpointDeleteMedico = apiEndpoint.replace('list', 'delete')
+      const medicoResponse = await fetch(apiEndpointDeleteMedico, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+
+      if (!medicoResponse.ok) {
+        throw new Error('Error al eliminar el médico.')
+      }
+
+      // Eliminar usuario
+      const apiEndpointDeleteUser = 'http://127.0.0.1:3000/api/user/delete'
+      const userResponse = await fetch(apiEndpointDeleteUser, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId }),
+      })
+
+      if (!userResponse.ok) {
+        throw new Error('Error al eliminar el usuario asociado.')
+      }
+
+      // Actualizar estado local
+      setData((prev) => prev.filter((p) => p._id !== id))
+
+      // Mostrar confirmación de éxito
+      Swal.fire('Eliminado', 'Médico eliminado correctamente.', 'success')
+    } catch (error) {
+      Swal.fire('Error', `No se pudo completar la eliminación: ${error.message}`, 'error')
+      console.error(error)
     }
   }
 

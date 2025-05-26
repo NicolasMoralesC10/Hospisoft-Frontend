@@ -12,6 +12,7 @@ import {
   cilPencil,
   cilPuzzle,
   cilSpeedometer,
+  cilUser,
   cilStar,
   cilUserFollow,
   cilMedicalCross,
@@ -48,6 +49,24 @@ const _nav = [
       color: 'info',
       text: 'NEW',
     }, */
+  },
+  {
+    component: CNavItem,
+    name: 'Usuarios',
+    to: '/usuarios',
+    icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: 'Medicos',
+    to: '/medicos',
+    icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: 'Citas',
+    to: '/citas',
+    icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
   },
   {
     component: CNavTitle,

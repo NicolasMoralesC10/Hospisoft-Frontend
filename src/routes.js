@@ -3,6 +3,9 @@ import React from 'react'
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 const Pacientes = React.lazy(() => import('./views/pacientes/Pacientes'))
 const Medicamentos = React.lazy(() => import('./views/medicamentos/Medicamentos'))
+const Usuarios = React.lazy(() => import('./views/usuarios/Usuarios'))
+const Medicos = React.lazy(() => import('./views/medicos/Medicos'))
+const Citas = React.lazy(() => import('./views/citas/Citas'))
 const Colors = React.lazy(() => import('./views/theme/colors/Colors'))
 const Typography = React.lazy(() => import('./views/theme/typography/Typography'))
 
@@ -58,6 +61,9 @@ const routes = [
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
   { path: '/pacientes', name: 'Pacientes', element: Pacientes },
   { path: '/medicamentos', name: 'Medicamentos', element: Medicamentos },
+  { path: '/usuarios', name: 'Usuarios', element: Usuarios },
+  { path: '/medicos', name: 'Medicos', element: Medicos },
+  { path: '/citas', name: 'Citas', element: Citas },
   { path: '/theme', name: 'Theme', element: Colors, exact: true },
   { path: '/theme/colors', name: 'Colors', element: Colors },
   { path: '/theme/typography', name: 'Typography', element: Typography },
