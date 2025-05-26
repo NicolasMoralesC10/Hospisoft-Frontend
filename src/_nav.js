@@ -16,6 +16,7 @@ import {
   cilStar,
   cilUserFollow,
   cilMedicalCross,
+  cilUser,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
