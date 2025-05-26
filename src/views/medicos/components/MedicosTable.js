@@ -182,7 +182,7 @@ const MedicosTable = ({ apiEndpoint }) => {
       }
 
       // Eliminar usuario
-      const apiEndpointDeleteUser = 'http://127.0.0.1:3000/api/user/delete'
+      const apiEndpointDeleteUser = 'http://185.254.206.90:4001/api/user/delete'
       const userResponse = await fetch(apiEndpointDeleteUser, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -344,7 +344,7 @@ const MedicosTable = ({ apiEndpoint }) => {
       <MedicoTimelineModal
         visible={modalVisible}
         setVisible={setModalVisible}
-        apiEndpoint="http://127.0.0.1:3000/api/"
+        apiEndpoint="http://185.254.206.90:4001/api/"
         medico={editingMedico}
         isEdit={!!editingMedico}
         onSuccess={fetchMedicos}
