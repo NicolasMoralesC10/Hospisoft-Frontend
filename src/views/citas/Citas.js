@@ -6,7 +6,7 @@ const VistaCitas = () => {
   return (
     <CRow>
       <CCol xs={12} className="mb-4">
-        <CitasCalendar apiEndpoint="http://127.0.0.1:3000/api/cita" />
+        <CitasCalendar apiEndpoint="http://185.254.206.90:4001/api/cita" />
       </CCol>
     </CRow>
   )
