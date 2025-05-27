@@ -219,6 +219,49 @@ const CitasCalendar = ({ apiEndpoint }) => {
     }
   }
 
+  const handleCancelCita = async (id) => {
+    if (!id) return
+    const confirm = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'Esta acción cancelará la cita y no podrá revertirse.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cancelar',
+      cancelButtonText: 'No, volver',
+    })
+
+    if (confirm.isConfirmed) {
+      try {
+        const res = await fetch(`${apiEndpoint}/cancel`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        })
+        const response = await res.json()
+
+        if (!response.estado) throw new Error(response.mensaje)
+
+        await cargarEventos()
+
+        Swal.fire({
+          icon: 'success',
+          title: '¡Cita cancelada!',
+          text: response.mensaje,
+          timer: 2000,
+          showConfirmButton: false,
+        })
+
+        setModalVisible(false)
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error.message,
+        })
+      }
+    }
+  }
+
   // Cerrar modal sin guardar
   const handleCloseModal = () => {
     setModalVisible(false)
@@ -241,6 +284,7 @@ const CitasCalendar = ({ apiEndpoint }) => {
         visible={modalVisible}
         onClose={handleCloseModal}
         onSave={handleSaveCita}
+        onCancel={handleCancelCita}
         initialData={citaActual}
         modo={modalModo}
         pacientes={pacientes}

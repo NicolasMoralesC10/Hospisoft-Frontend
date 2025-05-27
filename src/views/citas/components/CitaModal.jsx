@@ -27,6 +27,7 @@ const CitaModal = ({
   visible,
   onClose,
   onSave,
+  onCancel,
   initialData = {},
   modo = 'agregar',
   pacientes = [],
@@ -156,9 +157,14 @@ const CitaModal = ({
 
         <CModalFooter className="bg-primary">
           <CButton color="secondary" onClick={onClose}>
-            Cancelar
+            Cerrar
           </CButton>
-          <CButton color="primary" type="submit">
+          {modo === 'editar' && (
+            <CButton color="danger" onClick={() => onCancel(initialData?.id)}>
+              Cancelar cita
+            </CButton>
+          )}
+          <CButton color="light" variant="outline" type="submit">
             {modo === 'agregar' ? 'Agregar' : 'Guardar'}
           </CButton>
         </CModalFooter>
