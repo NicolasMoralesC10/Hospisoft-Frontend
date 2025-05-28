@@ -35,6 +35,10 @@ const CitaModal = ({
 }) => {
   const [cita, setCita] = useState(initialCita)
 
+  // Estados para paciente y médico seleccionados (objetos con value y label)
+  const [pacienteSeleccionado, setPacienteSeleccionado] = useState(null)
+  const [medicoSeleccionado, setMedicoSeleccionado] = useState(null)
+
   // Cargar React Select
   const opcionesPacientes = pacientes.map((pac) => ({
     value: pac._id,
@@ -45,10 +49,6 @@ const CitaModal = ({
     value: med._id,
     label: med.nombre,
   }))
-
-  // Estados para paciente y médico seleccionados (objetos con value y label)
-  const [pacienteSeleccionado, setPacienteSeleccionado] = useState(null)
-  const [medicoSeleccionado, setMedicoSeleccionado] = useState(null)
 
   useEffect(() => {
     if (initialData) {
@@ -70,6 +70,7 @@ const CitaModal = ({
 
       // Set paciente seleccionado
       const pacienteSel =
+        // Busca el primer elemento en el array que cumpla la condición
         opcionesPacientes.find((opt) => opt.value === initialData.idPaciente) || null
       setPacienteSeleccionado(pacienteSel)
 
@@ -79,7 +80,7 @@ const CitaModal = ({
     }
   }, [initialData, visible, pacientes, medicos])
 
-  // Manejo de cambios para inputs
+  // Manejo de cambios (value) en inputs
   const handleChange = (e) => {
     const { name, value } = e.target
     setCita((prev) => ({

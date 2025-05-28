@@ -9,7 +9,7 @@ import CitaModal from './CitaModal'
 const CitasCalendar = ({ apiEndpoint }) => {
   const calendarRef = useRef(null)
 
-  // Estado para la controlar modal
+  // Estados para controlar la modal
   const [modalVisible, setModalVisible] = useState(false)
   const [modalModo, setModalModo] = useState('agregar') // 'agregar' o 'editar'
   const [citaActual, setCitaActual] = useState(null)
@@ -19,7 +19,7 @@ const CitasCalendar = ({ apiEndpoint }) => {
   // Estado para eventos (citas)
   const [eventos, setEventos] = useState([])
 
-  const cargarEventos = async () => {
+  const loadEvents = async () => {
     try {
       const res = await fetch(`${apiEndpoint}/list`)
       const response = await res.json()
@@ -36,58 +36,68 @@ const CitasCalendar = ({ apiEndpoint }) => {
   }
 
   useEffect(() => {
-    cargarEventos()
+    loadEvents()
   }, [apiEndpoint])
 
-  /* Cargar selects, pacientes y medicos */
+  // Cargar selects, pacientes y medicos
   useEffect(() => {
-    fetch('http://127.0.0.1:3000/api/patient/list')
-      .then((res) => res.json())
-      .then((response) => {
-        if (response.estado && Array.isArray(response.data)) {
-          setPacientes(response.data)
+    const fetchData = async () => {
+      try {
+        // Ejecuta ambas peticiones en paralelo
+        const [resPacientes, resMedicos] = await Promise.all([
+          fetch('http://127.0.0.1:3000/api/patient/list'),
+          fetch('http://127.0.0.1:3000/api/medico/list'),
+        ])
+
+        const [dataPacientes, dataMedicos] = await Promise.all([
+          resPacientes.json(),
+          resMedicos.json(),
+        ])
+
+        // Valida y actualiza estados
+        if (dataPacientes.estado && Array.isArray(dataPacientes.data)) {
+          setPacientes(dataPacientes.data)
         } else {
           setPacientes([])
-          console.error('Respuesta inesperada de pacientes:', response)
+          console.error('Respuesta inesperada de pacientes:', dataPacientes)
         }
-      })
-      .catch((error) => {
-        console.error('Error cargando pacientes:', error)
-        setPacientes([])
-      })
 
-    fetch('http://127.0.0.1:3000/api/medico/list')
-      .then((res) => res.json())
-      .then((response) => {
-        if (response.estado && Array.isArray(response.data)) {
-          setMedicos(response.data)
+        if (dataMedicos.estado && Array.isArray(dataMedicos.data)) {
+          setMedicos(dataMedicos.data)
         } else {
           setMedicos([])
-          console.error('Respuesta inesperada de médicos:', response)
+          console.error('Respuesta inesperada de médicos:', dataMedicos)
         }
-      })
-      .catch((error) => {
-        console.error('Error cargando médicos:', error)
+      } catch (error) {
+        console.error('Error cargando datos:', error)
+        setPacientes([])
         setMedicos([])
-      })
+      }
+    }
+
+    fetchData()
   }, [])
 
-  /* Renderizar citas en el calendario */
+  // Renderizar citas en el calendario
   useEffect(() => {
-    fetch(`${apiEndpoint}/list`)
-      .then((res) => res.json())
-      .then((response) => {
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch(`${apiEndpoint}/list`)
+        const response = await res.json()
+
         if (response.estado && Array.isArray(response.data)) {
-          setEventos(response.data) // Eventos ya adaptados para FullCalendar desde el back
+          setEventos(response.data) // Eventos adaptados para FullCalendar desde el back
         } else {
           setEventos([])
           console.error('Respuesta inesperada de citas:', response)
         }
-      })
-      .catch((error) => {
-        console.error('Error cargando citas:', error)
+      } catch (error) {
+        console.error('Error al cargar las citas:', error)
         setEventos([])
-      })
+      }
+    }
+
+    fetchEvents()
   }, [apiEndpoint])
 
   // Al hacer clic en una fecha para agregar cita
@@ -110,21 +120,6 @@ const CitasCalendar = ({ apiEndpoint }) => {
   }
 
   // Al hacer clic en un evento para editar cita
-  /* const handleEventClick = (clickInfo) => {
-    const event = clickInfo.event
-    const props = event.extendedProps || {}
-
-    setModalModo('editar')
-    setCitaActual({
-      id: event.id,
-      fecha: event.startStr ? event.startStr.slice(0, 16) : '',
-      descripcion: props.descripcion || '',
-      idPaciente: props.idPaciente || '',
-      idMedico: props.idMedico || '',
-      status: typeof props.status === 'number' ? props.status : 1,
-    })
-    setModalVisible(true)
-  } */
   const handleEventClick = (clickInfo) => {
     const event = clickInfo.event
     const props = event.extendedProps || {}
@@ -153,7 +148,7 @@ const CitasCalendar = ({ apiEndpoint }) => {
 
         const response = await res.json()
 
-        // Si la cita ya existe, muestra el mensaje del backend
+        // Si la cita ya existe, muestra el mensaje del back
         if (
           !response.estado &&
           (response.tipoError === 'duplicado' ||
@@ -168,14 +163,14 @@ const CitasCalendar = ({ apiEndpoint }) => {
           return // return para no cerrar el modal, ni recargar eventos
         }
 
-        if (!res.ok) throw new Error('Error al crear la cita')
+        if (!res.ok) throw new Error('Error al crear la cita.')
 
-        await cargarEventos()
+        await loadEvents()
 
         Swal.fire({
           icon: 'success',
-          title: '¡Cita creada!',
-          text: 'La cita se ha registrado correctamente.',
+          title: '¡Cita agendada!',
+          text: response.mensaje,
           timer: 2000,
           showConfirmButton: false,
         })
@@ -188,7 +183,7 @@ const CitasCalendar = ({ apiEndpoint }) => {
 
         const response = await res.json()
 
-        // Si la cita ya existe, muestra el mensaje del backend
+        // Si la cita ya existe, muestra el mensaje del back
         if (
           !response.estado &&
           (response.tipoError === 'duplicado' ||
@@ -202,23 +197,24 @@ const CitasCalendar = ({ apiEndpoint }) => {
           })
           return // return para no cerrar el modal, ni recargar eventos
         }
-        if (!res.ok) throw new Error('Error al actualizar la cita')
+        if (!res.ok) throw new Error('Error al actualizar la cita.')
 
-        await cargarEventos()
+        await loadEvents()
         Swal.fire({
           icon: 'success',
           title: '¡Cita actualizada!',
-          text: 'La cita se ha actualizado correctamente.',
+          text: response.mensaje,
           timer: 2000,
           showConfirmButton: false,
         })
       }
       setModalVisible(false)
     } catch (error) {
-      alert(error.message)
+      alert('Error: ' + error.message)
     }
   }
 
+  // Cancelar cita
   const handleCancelCita = async (id) => {
     if (!id) return
     const confirm = await Swal.fire({
@@ -241,7 +237,7 @@ const CitasCalendar = ({ apiEndpoint }) => {
 
         if (!response.estado) throw new Error(response.mensaje)
 
-        await cargarEventos()
+        await loadEvents()
 
         Swal.fire({
           icon: 'success',
