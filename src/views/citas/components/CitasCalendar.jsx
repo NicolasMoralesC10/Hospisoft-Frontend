@@ -3,6 +3,7 @@ import Swal from 'sweetalert2'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
+import esLocale from '@fullcalendar/core/locales/es'
 
 import CitaModal from './CitaModal'
 
@@ -274,6 +275,8 @@ const CitasCalendar = ({ apiEndpoint }) => {
         events={eventos}
         dateClick={handleDateClick}
         eventClick={handleEventClick}
+        locales={[esLocale]}
+        locale="es"
       />
 
       <CitaModal
