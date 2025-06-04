@@ -13,9 +13,10 @@ import {
   CFormInput,
   CFormFeedback,
   CSpinner,
+  CBadge
 } from '@coreui/react'
 import Swal from 'sweetalert2'
-import MedicationCard from '../components/MedicationCard'
+import MedicationCard from './components/MedicationCard'
 
 const VistaMedicamentos = () => {
   const [modalVisible, setModalVisible] = useState(false)
@@ -23,22 +24,34 @@ const VistaMedicamentos = () => {
   const [selected, setSelected] = useState(null)
   const [medications, setMedications] = useState([])
   const [loading, setLoading] = useState(true)
+  const API_URL = 'http://127.0.0.1:3000/api/medicaments' // Ruta base reutilizable
   const [formValues, setFormValues] = useState({
-    nombreMedicamento: '',
-    dosis: '',
-    frecuencia: '',
-    fechaInicio: '',
+    nombre: '',
+    codigo: '',
+    presentacion: '',
+    concentracion: '',
+    formaFarmaceutica: '',
+    viaAdminist: '',
+    uniEnvase: '',
+    uniMedida: '',
+    stockDisponible: '',
+    fechaVencimiento: '',
+    precioCompra: '',
+    precioVenta: '',
+    descripcion: '',
+    imgen: '',
   })
   const [errors, setErrors] = useState({})
 
   const fetchMedications = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/medications') // Ajusta tu ruta real
+      const res = await fetch(`${API_URL}/list`) // Ajusta tu ruta
+      if (!res.ok) throw new Error(res.statusText)
       const json = await res.json()
       setMedications(json.data || [])
     } catch (err) {
-      console.error('Error al cargar medicamentos:', err)
+      console.error(err)
     } finally {
       setLoading(false)
     }
@@ -53,17 +66,37 @@ const VistaMedicamentos = () => {
     setSelected(med)
     if (med) {
       setFormValues({
-        nombreMedicamento: med.nombreMedicamento,
-        dosis: med.dosis,
-        frecuencia: med.frecuencia,
-        fechaInicio: med.fechaInicio.split('T')[0],
+        nombre: med.nombre || '',
+        codigo: med.codigo || '',
+        presentacion: med.presentacion || '',
+        concentracion: med.concentracion || '',
+        formaFarmaceutica: med.formaFarmaceutica || '',
+        viaAdminist: med.viaAdminist || '',
+        uniEnvase: med.uniEnvase || '',
+        uniMedida: med.uniMedida || '',
+        stockDisponible: med.stockDisponible || '',
+        fechaVencimiento: med.fechaVencimiento?.split('T')[0] || '',
+        precioCompra: med.precioCompra || '',
+        precioVenta: med.precioVenta || '',
+        descripcion: med.descripcion || '',
+        imgen: med.imgen || '',
       })
     } else {
       setFormValues({
-        nombreMedicamento: '',
-        dosis: '',
-        frecuencia: '',
-        fechaInicio: '',
+        nombre: '',
+        codigo: '',
+        presentacion: '',
+        concentracion: '',
+        formaFarmaceutica: '',
+        viaAdminist: '',
+        uniEnvase: '',
+        uniMedida: '',
+        stockDisponible: '',
+        fechaVencimiento: '',
+        precioCompra: '',
+        precioVenta: '',
+        descripcion: '',
+        imgen: '',
       })
     }
     setErrors({})
@@ -72,10 +105,11 @@ const VistaMedicamentos = () => {
 
   const validateForm = () => {
     const errs = {}
-    if (!formValues.nombreMedicamento) errs.nombreMedicamento = 'Requerido'
-    if (!formValues.dosis) errs.dosis = 'Requerido'
-    if (!formValues.frecuencia) errs.frecuencia = 'Requerido'
-    if (!formValues.fechaInicio) errs.fechaInicio = 'Requerido'
+    if (!formValues.nombre) errs.nombre = 'Requerido'
+    if (!formValues.codigo) errs.codigo = 'Requerido'
+    if (!formValues.stockDisponible) errs.stockDisponible = 'Requerido'
+    if (!formValues.fechaVencimiento) errs.fechaVencimiento = 'Requerido'
+    if (!formValues.precioVenta) errs.precioVenta = 'Requerido'
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -84,17 +118,21 @@ const VistaMedicamentos = () => {
     if (!validateForm()) return
 
     try {
-      const method = modalMode === 'edit' ? 'PUT' : 'POST'
-      const url = modalMode === 'edit' ? `/api/medications/${selected._id}` : `/api/medications`
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formValues),
-      })
-
+      let res
+      if (modalMode === 'edit') {
+        res = await fetch(`${API_URL}/${selected._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formValues),
+        })
+      } else {
+        res = await fetch(`${API_URL}/list`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formValues),
+        })
+      }
       if (!res.ok) throw new Error('Error al guardar')
-
       Swal.fire('Éxito', 'Medicamento guardado', 'success')
       setModalVisible(false)
       fetchMedications()
@@ -113,7 +151,8 @@ const VistaMedicamentos = () => {
     })
     if (result.isConfirmed) {
       try {
-        await fetch(`/api/medications/${id}`, { method: 'DELETE' })
+        const res = await fetch(`${API_URL}${id}`, { method: 'DELETE' })
+        if (!res.ok) throw new Error('Error al eliminar')
         fetchMedications()
         Swal.fire('Eliminado', 'Medicamento eliminado', 'success')
       } catch (err) {
@@ -151,7 +190,7 @@ const VistaMedicamentos = () => {
         </CRow>
       )}
 
-      <CModal visible={modalVisible} onClose={() => setModalVisible(false)}>
+      <CModal visible={modalVisible} onClose={() => setModalVisible(false)} size="lg">
         <CModalHeader>
           <CModalTitle>
             {modalMode === 'create'
@@ -165,54 +204,150 @@ const VistaMedicamentos = () => {
           {modalMode === 'details' && selected ? (
             <>
               <p>
-                <strong>Nombre:</strong> {selected.nombreMedicamento}
+                <strong>Nombre:</strong> {selected.nombre}
               </p>
               <p>
-                <strong>Dosis:</strong> {selected.dosis}
+                <strong>Código:</strong> {selected.codigo}
               </p>
               <p>
-                <strong>Frecuencia:</strong> {selected.frecuencia}
+                <strong>Presentación:</strong> {selected.presentacion}
               </p>
               <p>
-                <strong>Inicio:</strong> {new Date(selected.fechaInicio).toLocaleDateString()}
+                <strong>Concentración:</strong> {selected.concentracion}
+              </p>
+              <p>
+                <strong>Forma Farmacéutica:</strong> {selected.formaFarmaceutica}
+              </p>
+              <p>
+                <strong>Vía de Administración:</strong> {selected.viaAdminist}
+              </p>
+              <p>
+                <strong>Unidad por Envase:</strong> {selected.uniEnvase}
+              </p>
+              <p>
+                <strong>Unidad de Medida:</strong> {selected.uniMedida}
+              </p>
+              <p>
+                <strong>Stock Disponible:</strong>{' '}
+                <CBadge color={selected.stockDisponible > 0 ? 'success' : 'danger'}>
+                  {selected.stockDisponible}
+                </CBadge>
+              </p>
+              <p>
+                <strong>Vencimiento:</strong>{' '}
+                {new Date(selected.fechaVencimiento).toLocaleDateString()}
+              </p>
+              <p>
+                <strong>Precio Compra:</strong> ${selected.precioCompra.toLocaleString()}
+              </p>
+              <p>
+                <strong>Precio Venta:</strong> ${selected.precioVenta.toLocaleString()}
+              </p>
+              <p>
+                <strong>Descripción:</strong> {selected.descripcion || 'N/A'}
               </p>
             </>
           ) : (
             <CForm>
               <CFormLabel>Nombre</CFormLabel>
               <CFormInput
-                value={formValues.nombreMedicamento}
+                value={formValues.nombre}
+                onChange={(e) => setFormValues({ ...formValues, nombre: e.target.value })}
+                invalid={!!errors.nombre}
+              />
+              <CFormFeedback invalid>{errors.nombre}</CFormFeedback>
+
+              <CFormLabel className="mt-3">Código</CFormLabel>
+              <CFormInput
+                value={formValues.codigo}
+                onChange={(e) => setFormValues({ ...formValues, codigo: e.target.value })}
+                invalid={!!errors.codigo}
+              />
+              <CFormFeedback invalid>{errors.codigo}</CFormFeedback>
+
+              <CFormLabel className="mt-3">Presentación</CFormLabel>
+              <CFormInput
+                value={formValues.presentacion}
+                onChange={(e) => setFormValues({ ...formValues, presentacion: e.target.value })}
+              />
+
+              <CFormLabel className="mt-3">Concentración</CFormLabel>
+              <CFormInput
+                value={formValues.concentracion}
+                onChange={(e) => setFormValues({ ...formValues, concentracion: e.target.value })}
+              />
+
+              <CFormLabel className="mt-3">Forma Farmacéutica</CFormLabel>
+              <CFormInput
+                value={formValues.formaFarmaceutica}
                 onChange={(e) =>
-                  setFormValues({ ...formValues, nombreMedicamento: e.target.value })
+                  setFormValues({ ...formValues, formaFarmaceutica: e.target.value })
                 }
-                invalid={!!errors.nombreMedicamento}
               />
-              <CFormFeedback invalid>{errors.nombreMedicamento}</CFormFeedback>
 
-              <CFormLabel className="mt-3">Dosis</CFormLabel>
+              <CFormLabel className="mt-3">Vía de Administración</CFormLabel>
               <CFormInput
-                value={formValues.dosis}
-                onChange={(e) => setFormValues({ ...formValues, dosis: e.target.value })}
-                invalid={!!errors.dosis}
+                value={formValues.viaAdminist}
+                onChange={(e) => setFormValues({ ...formValues, viaAdminist: e.target.value })}
               />
-              <CFormFeedback invalid>{errors.dosis}</CFormFeedback>
 
-              <CFormLabel className="mt-3">Frecuencia</CFormLabel>
+              <CFormLabel className="mt-3">Unidad por Envase</CFormLabel>
               <CFormInput
-                value={formValues.frecuencia}
-                onChange={(e) => setFormValues({ ...formValues, frecuencia: e.target.value })}
-                invalid={!!errors.frecuencia}
+                value={formValues.uniEnvase}
+                onChange={(e) => setFormValues({ ...formValues, uniEnvase: e.target.value })}
               />
-              <CFormFeedback invalid>{errors.frecuencia}</CFormFeedback>
 
-              <CFormLabel className="mt-3">Fecha de Inicio</CFormLabel>
+              <CFormLabel className="mt-3">Unidad de Medida</CFormLabel>
+              <CFormInput
+                value={formValues.uniMedida}
+                onChange={(e) => setFormValues({ ...formValues, uniMedida: e.target.value })}
+              />
+
+              <CFormLabel className="mt-3">Stock Disponible</CFormLabel>
+              <CFormInput
+                type="number"
+                value={formValues.stockDisponible}
+                onChange={(e) => setFormValues({ ...formValues, stockDisponible: e.target.value })}
+                invalid={!!errors.stockDisponible}
+              />
+              <CFormFeedback invalid>{errors.stockDisponible}</CFormFeedback>
+
+              <CFormLabel className="mt-3">Fecha de Vencimiento</CFormLabel>
               <CFormInput
                 type="date"
-                value={formValues.fechaInicio}
-                onChange={(e) => setFormValues({ ...formValues, fechaInicio: e.target.value })}
-                invalid={!!errors.fechaInicio}
+                value={formValues.fechaVencimiento}
+                onChange={(e) => setFormValues({ ...formValues, fechaVencimiento: e.target.value })}
+                invalid={!!errors.fechaVencimiento}
               />
-              <CFormFeedback invalid>{errors.fechaInicio}</CFormFeedback>
+              <CFormFeedback invalid>{errors.fechaVencimiento}</CFormFeedback>
+
+              <CFormLabel className="mt-3">Precio Compra</CFormLabel>
+              <CFormInput
+                type="number"
+                value={formValues.precioCompra}
+                onChange={(e) => setFormValues({ ...formValues, precioCompra: e.target.value })}
+              />
+
+              <CFormLabel className="mt-3">Precio Venta</CFormLabel>
+              <CFormInput
+                type="number"
+                value={formValues.precioVenta}
+                onChange={(e) => setFormValues({ ...formValues, precioVenta: e.target.value })}
+                invalid={!!errors.precioVenta}
+              />
+              <CFormFeedback invalid>{errors.precioVenta}</CFormFeedback>
+
+              <CFormLabel className="mt-3">Descripción</CFormLabel>
+              <CFormInput
+                value={formValues.descripcion}
+                onChange={(e) => setFormValues({ ...formValues, descripcion: e.target.value })}
+              />
+
+              <CFormLabel className="mt-3">Imagen (URL)</CFormLabel>
+              <CFormInput
+                value={formValues.imgen}
+                onChange={(e) => setFormValues({ ...formValues, imgen: e.target.value })}
+              />
             </CForm>
           )}
         </CModalBody>
