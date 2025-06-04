@@ -89,7 +89,6 @@ const MedicosTable = ({ apiEndpoint }) => {
   const [modalVisible, setModalVisible] = useState(false)
   const [editingMedico, setEditingMedico] = useState(null)
 
-  // Fetch de datos
   const fetchMedicos = async () => {
     try {
       const res = await fetch(apiEndpoint)
@@ -104,24 +103,10 @@ const MedicosTable = ({ apiEndpoint }) => {
   }
 
   useEffect(() => {
-    /* async function fetchMedicos() {
-      try {
-        const res = await fetch(apiEndpoint)
-        if (!res.ok) throw new Error(res.statusText)
-        const json = await res.json()
-        setData(json.data || [])
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    } */
     fetchMedicos()
   }, [apiEndpoint])
 
   const handleCreate = ({ client, user }) => {
-    // Aquí envías a tu API:
-    // POST /medicos con client, luego POST /usuarios con user y se relacionan ambos
     console.log('Cliente:', client)
     console.log('Usuario:', user)
   }
@@ -132,9 +117,7 @@ const MedicosTable = ({ apiEndpoint }) => {
     setModalVisible(true)
   }
 
-  // Función de eliminar
   const handleDelete = async (id) => {
-    // Mostrar confirmación antes de eliminar
     const confirmResult = await Swal.fire({
       title: '¿Estás seguro?',
       text: 'Esta acción eliminará al médico y su usuario asociado permanentemente.',
@@ -193,10 +176,9 @@ const MedicosTable = ({ apiEndpoint }) => {
         throw new Error('Error al eliminar el usuario asociado.')
       }
 
-      // Actualizar estado local
+      // Actualizar estado
       setData((prev) => prev.filter((p) => p._id !== id))
 
-      // Mostrar confirmación de éxito
       Swal.fire('Eliminado', 'Médico eliminado correctamente.', 'success')
     } catch (error) {
       Swal.fire('Error', `No se pudo completar la eliminación: ${error.message}`, 'error')
