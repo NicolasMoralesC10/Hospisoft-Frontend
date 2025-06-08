@@ -26,7 +26,7 @@ import {
   flexRender,
 } from '@tanstack/react-table'
 
-import { apiFetch } from '../../../apiFetch.js'
+import { apiFetch } from '../../../helpers/apiFetch.js'
 
 // columnas de la tabla :: acessorKey es el nombre de la propiedad en el Json
 const columns = [

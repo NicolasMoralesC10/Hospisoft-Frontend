@@ -16,6 +16,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser } from '@coreui/icons'
 import { useAuth } from '../../../context/AuthContext'
+import { apiFetch } from '../../../helpers/apiFetch.js'
 
 const Login = () => {
   const [email, setEmail] = useState('')
@@ -29,18 +30,10 @@ const Login = () => {
     setError('')
 
     try {
-      const response = await fetch('http://127.0.0.1:3000/api/login', {
+      const data = await apiFetch('http://127.0.0.1:3000/api/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || 'Error en el login')
-        return
-      }
 
       // Usar la función login del contexto para guardar token y usuario
       login(data.token, data.user)
@@ -48,7 +41,7 @@ const Login = () => {
       // Redirigir a ruta protegida
       navigate('/dashboard')
     } catch (err) {
-      setError('Error de conexión')
+      setError(err.message || 'Error de conexión')
     }
   }
 

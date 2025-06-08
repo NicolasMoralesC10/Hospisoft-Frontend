@@ -17,7 +17,7 @@ import {
 } from '@coreui/react'
 import { User, Lock } from 'lucide-react'
 
-import { apiFetch } from '../../../apiFetch.js'
+import { apiFetch } from '../../../helpers/apiFetch.js'
 
 const initialClient = {
   nombre: '',

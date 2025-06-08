@@ -7,6 +7,8 @@ import esLocale from '@fullcalendar/core/locales/es'
 
 import CitaModal from './CitaModal'
 
+import { apiFetch } from '../../../helpers/apiFetch.js'
+
 const CitasCalendar = ({ apiEndpoint }) => {
   const calendarRef = useRef(null)
 
@@ -22,13 +24,12 @@ const CitasCalendar = ({ apiEndpoint }) => {
 
   const loadEvents = async () => {
     try {
-      const res = await fetch(`${apiEndpoint}/list`)
-      const response = await res.json()
-      if (response.estado && Array.isArray(response.data)) {
-        setEventos(response.data)
+      const payload = await apiFetch(`${apiEndpoint}/list`)
+      if (payload.estado && Array.isArray(payload.data)) {
+        setEventos(payload.data)
       } else {
         setEventos([])
-        console.error('Respuesta inesperada de citas:', response)
+        console.error('Respuesta inesperada de citas:', payload)
       }
     } catch (error) {
       console.error('Error cargando citas:', error)
@@ -45,15 +46,15 @@ const CitasCalendar = ({ apiEndpoint }) => {
     const fetchData = async () => {
       try {
         // Ejecuta ambas peticiones en paralelo
-        const [resPacientes, resMedicos] = await Promise.all([
-          fetch('http://127.0.0.1:3000/api/patient/list'),
-          fetch('http://127.0.0.1:3000/api/medico/list'),
+        const [dataPacientes, dataMedicos] = await Promise.all([
+          apiFetch('http://127.0.0.1:3000/api/patient/list'),
+          apiFetch('http://127.0.0.1:3000/api/medico/list'),
         ])
 
-        const [dataPacientes, dataMedicos] = await Promise.all([
+        /* const [dataPacientes, dataMedicos] = await Promise.all([
           resPacientes.json(),
           resMedicos.json(),
-        ])
+        ]) */
 
         // Valida y actualiza estados
         if (dataPacientes.estado && Array.isArray(dataPacientes.data)) {
@@ -83,8 +84,7 @@ const CitasCalendar = ({ apiEndpoint }) => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await fetch(`${apiEndpoint}/list`)
-        const response = await res.json()
+        const response = await apiFetch(`${apiEndpoint}/list`)
 
         if (response.estado && Array.isArray(response.data)) {
           setEventos(response.data) // Eventos adaptados para FullCalendar desde el back
@@ -138,7 +138,7 @@ const CitasCalendar = ({ apiEndpoint }) => {
   }
 
   // Guardar cita (agregar o editar)
-  const handleSaveCita = async (data) => {
+  /* const handleSaveCita = async (data) => {
     try {
       if (modalModo === 'agregar') {
         const res = await fetch(`${apiEndpoint}/create`, {
@@ -213,10 +213,53 @@ const CitasCalendar = ({ apiEndpoint }) => {
     } catch (error) {
       alert('Error: ' + error.message)
     }
+  } */
+
+  const handleSaveCita = async (data) => {
+    try {
+      let response
+      if (modalModo === 'agregar') {
+        response = await apiFetch(`${apiEndpoint}/create`, {
+          method: 'POST',
+          body: JSON.stringify(data),
+        })
+      } else if (modalModo === 'editar') {
+        response = await apiFetch(`${apiEndpoint}/update`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        })
+      }
+
+      if (
+        !response.estado &&
+        ['duplicado', 'duplicado_paciente', 'duplicado_medico'].includes(response.tipoError)
+      ) {
+        Swal.fire({
+          icon: 'error',
+          title: '¡Cita duplicada!',
+          text: response.mensaje,
+        })
+        return
+      }
+
+      await loadEvents()
+
+      Swal.fire({
+        icon: 'success',
+        title: modalModo === 'agregar' ? '¡Cita agendada!' : '¡Cita actualizada!',
+        text: response.mensaje,
+        timer: 2000,
+        showConfirmButton: false,
+      })
+
+      setModalVisible(false)
+    } catch (error) {
+      alert('Error: ' + error.message)
+    }
   }
 
   // Cancelar cita
-  const handleCancelCita = async (id) => {
+  /* const handleCancelCita = async (id) => {
     if (!id) return
     const confirm = await Swal.fire({
       title: '¿Estás seguro?',
@@ -235,6 +278,47 @@ const CitasCalendar = ({ apiEndpoint }) => {
           body: JSON.stringify({ id }),
         })
         const response = await res.json()
+
+        if (!response.estado) throw new Error(response.mensaje)
+
+        await loadEvents()
+
+        Swal.fire({
+          icon: 'success',
+          title: '¡Cita cancelada!',
+          text: response.mensaje,
+          timer: 2000,
+          showConfirmButton: false,
+        })
+
+        setModalVisible(false)
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error.message,
+        })
+      }
+    }
+  } */
+
+  const handleCancelCita = async (id) => {
+    if (!id) return
+    const confirm = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'Esta acción cancelará la cita y no podrá revertirse.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cancelar',
+      cancelButtonText: 'No, volver',
+    })
+
+    if (confirm.isConfirmed) {
+      try {
+        const response = await apiFetch(`${apiEndpoint}/cancel`, {
+          method: 'PUT',
+          body: JSON.stringify({ id }),
+        })
 
         if (!response.estado) throw new Error(response.mensaje)
 
