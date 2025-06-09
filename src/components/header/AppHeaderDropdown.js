@@ -26,7 +26,7 @@ const UserDropdown = () => {
   const avatarSrc = avatarImg
 
   const buttonColor = colorMode === 'dark' ? 'dark' : 'light'
-  const buttonVariant = colorMode === 'dark' ? 'outline' : 'solid'
+  const buttonVariant = colorMode === 'dark' ? 'solid' : 'solid'
 
   return (
     <CDropdown
