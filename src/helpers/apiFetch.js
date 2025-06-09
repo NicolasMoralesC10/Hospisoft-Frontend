@@ -35,9 +35,10 @@ export const apiFetch = async (url, options = {}) => {
     let errorMessage = `Error ${response.status}`
     try {
       const errorData = await response.json()
-      errorMessage = errorData.message || errorMessage
-    } catch {
+      errorMessage = errorData.error || errorData.message || errorMessage
+    } catch (err) {
       // No JSON en la respuesta de error
+      console.warn('No se pudo parsear el cuerpo JSON del error:', err)
     }
     throw new Error(errorMessage)
   }
