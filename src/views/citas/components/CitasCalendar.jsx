@@ -47,14 +47,9 @@ const CitasCalendar = ({ apiEndpoint }) => {
       try {
         // Ejecuta ambas peticiones en paralelo
         const [dataPacientes, dataMedicos] = await Promise.all([
-          apiFetch('http://127.0.0.1:3000/api/patient/list'),
-          apiFetch('http://127.0.0.1:3000/api/medico/list'),
+          apiFetch('https://185.254.206.90:4080/api/patient/list'),
+          apiFetch('https://185.254.206.90:4080/api/medico/list'),
         ])
-
-        /* const [dataPacientes, dataMedicos] = await Promise.all([
-          resPacientes.json(),
-          resMedicos.json(),
-        ]) */
 
         // Valida y actualiza estados
         if (dataPacientes.estado && Array.isArray(dataPacientes.data)) {
@@ -138,83 +133,6 @@ const CitasCalendar = ({ apiEndpoint }) => {
   }
 
   // Guardar cita (agregar o editar)
-  /* const handleSaveCita = async (data) => {
-    try {
-      if (modalModo === 'agregar') {
-        const res = await fetch(`${apiEndpoint}/create`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        })
-
-        const response = await res.json()
-
-        // Si la cita ya existe, muestra el mensaje del back
-        if (
-          !response.estado &&
-          (response.tipoError === 'duplicado' ||
-            response.tipoError === 'duplicado_paciente' ||
-            response.tipoError === 'duplicado_medico')
-        ) {
-          Swal.fire({
-            icon: 'error',
-            title: '¡Cita duplicada!',
-            text: response.mensaje,
-          })
-          return // return para no cerrar el modal, ni recargar eventos
-        }
-
-        if (!res.ok) throw new Error('Error al crear la cita.')
-
-        await loadEvents()
-
-        Swal.fire({
-          icon: 'success',
-          title: '¡Cita agendada!',
-          text: response.mensaje,
-          timer: 2000,
-          showConfirmButton: false,
-        })
-      } else if (modalModo === 'editar') {
-        const res = await fetch(`${apiEndpoint}/update`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        })
-
-        const response = await res.json()
-
-        // Si la cita ya existe, muestra el mensaje del back
-        if (
-          !response.estado &&
-          (response.tipoError === 'duplicado' ||
-            response.tipoError === 'duplicado_paciente' ||
-            response.tipoError === 'duplicado_medico')
-        ) {
-          Swal.fire({
-            icon: 'error',
-            title: '¡Cita duplicada!',
-            text: response.mensaje,
-          })
-          return // return para no cerrar el modal, ni recargar eventos
-        }
-        if (!res.ok) throw new Error('Error al actualizar la cita.')
-
-        await loadEvents()
-        Swal.fire({
-          icon: 'success',
-          title: '¡Cita actualizada!',
-          text: response.mensaje,
-          timer: 2000,
-          showConfirmButton: false,
-        })
-      }
-      setModalVisible(false)
-    } catch (error) {
-      alert('Error: ' + error.message)
-    }
-  } */
-
   const handleSaveCita = async (data) => {
     try {
       let response
@@ -259,49 +177,6 @@ const CitasCalendar = ({ apiEndpoint }) => {
   }
 
   // Cancelar cita
-  /* const handleCancelCita = async (id) => {
-    if (!id) return
-    const confirm = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: 'Esta acción cancelará la cita y no podrá revertirse.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, cancelar',
-      cancelButtonText: 'No, volver',
-    })
-
-    if (confirm.isConfirmed) {
-      try {
-        const res = await fetch(`${apiEndpoint}/cancel`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id }),
-        })
-        const response = await res.json()
-
-        if (!response.estado) throw new Error(response.mensaje)
-
-        await loadEvents()
-
-        Swal.fire({
-          icon: 'success',
-          title: '¡Cita cancelada!',
-          text: response.mensaje,
-          timer: 2000,
-          showConfirmButton: false,
-        })
-
-        setModalVisible(false)
-      } catch (error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: error.message,
-        })
-      }
-    }
-  } */
-
   const handleCancelCita = async (id) => {
     if (!id) return
     const confirm = await Swal.fire({

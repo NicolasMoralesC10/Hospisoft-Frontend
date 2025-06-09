@@ -44,10 +44,6 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        /* const res = await apiFetch(`${apiEndpoint}roles/listarmedicos`)
-        if (!res.ok) throw new Error('Error al cargar roles.')
-        const data = await res.json() */
-
         const payload = await apiFetch(`${apiEndpoint}roles/listarmedicos`)
         const list = Array.isArray(payload) ? payload : payload.listarRoles || []
 
@@ -233,26 +229,6 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     const endpoint = isEdit && userId ? 'user/update' : 'user/create'
     const method = isEdit && userId ? 'PUT' : 'POST'
 
-    /* const userRes = await apiFetch(`${apiEndpoint}${endpoint}`, {
-      method,
-      body: JSON.stringify(userPayload),
-    })
-
-    if (!userRes.ok) {
-      const msg = await userRes.text()
-      throw new Error(`Error al crear/actualizar el usuario: ${msg}`)
-    }
-
-    const userData = await userRes.json()
-
-    const extractedUserId = extractUserId(userData, userId)
-
-    if (!userData.estado) {
-      throw new Error(userData.mensaje || 'Error al procesar usuario')
-    }
-
-    return { userId: extractedUserId, userData } */
-
     try {
       // apiFetch retorna el JSON parseado o lanza error si la respuesta no es ok
       const userData = await apiFetch(`${apiEndpoint}${endpoint}`, {
@@ -286,23 +262,6 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
 
     const endpoint = isEdit && medico?._id ? 'medico/update' : 'medico/create'
     const method = isEdit && medico?._id ? 'PUT' : 'POST'
-
-    /* const res = await apiFetch(`${apiEndpoint}${endpoint}`, {
-      method,
-      body: JSON.stringify(payload),
-    })
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}))
-      throw new Error(errorData.message || errorData.error || 'Error al crear/actualizar médico')
-    }
-
-    const data = await res.json()
-    if (!data.estado) {
-      throw new Error(data.mensaje || 'Error al procesar médico')
-    }
-
-    return data */
 
     try {
       // apiFetch ya retorna el JSON parseado o lanza error si no es ok
@@ -379,129 +338,6 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
   }
 
   /* --------------------------------------------------------------- */
-
-  /*  const handleSubmit = async () => {
-    setSubmitting(true)
-    try {
-      let userId = medico?.idUsuario?._id || medico?.idUsuario || null
-
-      // 1. Crear o actualizar usuario
-      let userRes
-      if (isEdit && userId) {
-        // Actualizar usuario (PUT)
-        const userPayload = {
-          id: userId,
-          username: user.username,
-          email: user.email,
-          rol: user.rol,
-        }
-        // Solo incluir password si no está vacío ni es solo espacios
-        if (user.password && user.password.trim() !== '') {
-          userPayload.password = user.password
-        }
-        userRes = await apiFetch(`${apiEndpoint}user/update`, {
-          method: 'PUT',
-          body: JSON.stringify(userPayload),
-        })
-      } else {
-        // Crear usuario (POST)
-        userRes = await apiFetch(`${apiEndpoint}user/create`, {
-          method: 'POST',
-          body: JSON.stringify({
-            username: user.username,
-            email: user.email,
-            password: user.password,
-            rol: user.rol,
-          }),
-        })
-      }
-
-      if (!userRes.ok) {
-        const msg = await userRes.text()
-        throw new Error(`Error al crear/actualizar el usuario: ${msg}`)
-      }
-
-      const userData = await userRes.json()
-      console.log(userData)
-      const idUsuario =
-        userData.data?._id ||
-        userData.id ||
-        userData._id ||
-        (userData.usuario && userData.usuario?._id) ||
-        userId
-
-      if (!userData.estado) {
-        throw new Error(`${userData.mensaje}`)
-      } else if (!idUsuario) {
-        throw new Error('No se obtuvo el idUsuario del medico.' + idUsuario)
-      }
-
-      // 2. Crear o actualizar medico
-      let clientRes
-      if (isEdit && medico?._id) {
-        // Actualizar medico (PUT)
-        const clientPayload = {
-          id: medico._id,
-          nombre: client.nombre,
-          documento: Number(client.documento),
-          telefono: Number(client.telefono),
-          especialidad: client.especialidad,
-        }
-        clientRes = await apiFetch(`${apiEndpoint}medico/update`, {
-          method: 'PUT',
-          body: JSON.stringify(clientPayload),
-        })
-      } else {
-        // Crear medico (POST)
-        const clientPayload = {
-          nombre: client.nombre,
-          documento: Number(client.documento),
-          telefono: Number(client.telefono),
-          especialidad: client.especialidad,
-          idUsuario,
-        }
-        clientRes = await apiFetch(`${apiEndpoint}medico/create`, {
-          method: 'POST',
-          body: JSON.stringify(clientPayload),
-        })
-      }
-
-      if (!clientRes.ok) {
-        const msg = await clientRes.text()
-        throw new Error(`Error al crear/actualizar el medico: ${msg}`)
-      }
-
-      const clientData = await clientRes.json()
-      console.log(clientData)
-
-      if (!clientData.estado) {
-        throw new Error(`${clientData.mensaje}`)
-      }
-
-      Swal.fire(
-        'Éxito',
-        `Información ${isEdit ? 'actualizada' : 'registrada'} correctamente`,
-        'success',
-      )
-      onSuccess()
-      setVisible(false)
-      setStep(1)
-      setClient(initialClient)
-      setUser(initialUser)
-      setErrors({})
-    } catch (error) {
-      const mensaje = error.message || '¡Error desconocido!'
-      Swal.fire('Error', mensaje, 'error')
-
-      if (mensaje.includes('usuario')) {
-        setStep(1)
-      } else if (mensaje.includes('medico')) {
-        setStep(2)
-      }
-    } finally {
-      setSubmitting(false)
-    }
-  } */
 
   const handleNext = () => {
     if (step === 1 && validateClient()) setStep(2)

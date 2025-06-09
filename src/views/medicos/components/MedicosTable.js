@@ -93,10 +93,6 @@ const MedicosTable = ({ apiEndpoint }) => {
 
   const fetchMedicos = async () => {
     try {
-      /* const res = await apiFetch(apiEndpoint)
-      if (!res.ok) throw new Error(res.statusText)
-      const json = await res.json()
-      setData(json.data || []) */
       const payload = await apiFetch(apiEndpoint)
       if (payload.data && Array.isArray(payload.data)) {
         setData(payload.data)
@@ -166,7 +162,7 @@ const MedicosTable = ({ apiEndpoint }) => {
       }
 
       // Eliminar usuario
-      const apiEndpointDeleteUser = 'http://127.0.0.1:3000/api/user/delete'
+      const apiEndpointDeleteUser = 'https://185.254.206.90:4080/api/user/delete'
       const userResponse = await apiFetch(apiEndpointDeleteUser, {
         method: 'PUT',
         body: JSON.stringify({ id: userId }),
