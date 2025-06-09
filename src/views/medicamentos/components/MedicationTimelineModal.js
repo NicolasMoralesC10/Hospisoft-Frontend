@@ -19,6 +19,8 @@ import Flatpickr from 'react-flatpickr'
 import 'flatpickr/dist/flatpickr.css'
 import 'flatpickr/dist/themes/material_blue.css'
 
+import { apiFetch } from '../../../helpers/apiFetch.js'
+
 const initialValues = {
   nombre: '',
   codigo: '',
@@ -60,7 +62,7 @@ const MedicationTimelineModal = ({ visible, setVisible, mode, data, apiEndpoint,
         viaAdminist: data.viaAdminist || '',
         imagenFile: null,
         imagenPreview: data.imagen
-          ? `http://127.0.0.1:3000/api/medicaments/image/${data.imagen}`
+          ? `https://185.254.206.90:4080/api/medicaments/image/${data.imagen}`
           : '',
         stockDisponible: data.stockDisponible || '',
         fechaVencimiento: data.fechaVencimiento?.split('T')[0] || '',
@@ -120,7 +122,6 @@ const MedicationTimelineModal = ({ visible, setVisible, mode, data, apiEndpoint,
       const method = mode === 'edit' ? 'PUT' : 'POST'
       const formData = new FormData()
 
-      // Nombres EXACTOS que espera tu backend (Joi)
       formData.append('nombre', form.nombre)
       formData.append('codigo', form.codigo)
       formData.append('presentacion', form.presentacion)
@@ -132,8 +133,11 @@ const MedicationTimelineModal = ({ visible, setVisible, mode, data, apiEndpoint,
       formData.append('prVenta', form.precioVenta)
       if (form.imagenFile) formData.append('img', form.imagenFile)
 
-      const res = await fetch(url, { method, body: formData })
-      if (!res.ok) throw new Error('Error en servidor')
+      await apiFetch(url, {
+        method,
+        body: formData,
+      })
+
       Swal.fire('Éxito', 'Medicamento guardado', 'success')
       setVisible(false)
       onSuccess && onSuccess()

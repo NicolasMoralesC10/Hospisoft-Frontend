@@ -31,7 +31,7 @@ const imgStyle = {
 const MedicationCard = ({ medication, onEdit, onDelete, onDetails }) => {
   const vencimiento = new Date(medication.fechaVencimiento).toLocaleDateString()
   const imagenUrl = medication.imagen?.trim()
-    ? `http://127.0.0.1:3000/api/medicaments/image/${medication.imagen}`
+    ? `https://185.254.206.90:4080/api/medicaments/image/${medication.imagen}`
     : 'https://via.placeholder.com/400x225.png?text=Sin+Imagen'
 
   const [isHover, setIsHover] = React.useState(false)

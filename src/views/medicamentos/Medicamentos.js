@@ -19,6 +19,8 @@ import Swal from 'sweetalert2'
 import MedicationCard from './components/MedicationCard'
 import MedicationTimelineModal from './components/MedicationTimelineModal'
 
+import { apiFetch } from '../../../helpers/apiFetch.js'
+
 const imageContainerStyle = {
   width: '100%',
   aspectRatio: '16/10',
@@ -60,15 +62,13 @@ const VistaMedicamentos = () => {
   const [modalMode, setModalMode] = useState('create')
   const [detailVisible, setDetailVisible] = useState(false)
   const [selected, setSelected] = useState(null)
-  const API_URL = 'http://127.0.0.1:3000/api/medicaments'
+  const API_URL = 'https://185.254.206.90:4080/api/medicaments'
 
   const fetchMedications = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`${API_URL}/list`)
-      if (!res.ok) throw new Error(res.statusText)
-      const json = await res.json()
-      setMedications(json.data || [])
+      const payload = await apiFetch(`${API_URL}/list`)
+      setMedications(payload.data || [])
     } catch (err) {
       console.error(err)
       Swal.fire('Error', 'No se pudo cargar los medicamentos', 'error')
@@ -100,14 +100,13 @@ const VistaMedicamentos = () => {
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
     })
+
     if (result.isConfirmed) {
       try {
-        const res = await fetch(`${API_URL}/delet`, {
+        await apiFetch(`${API_URL}/delet`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id }),
         })
-        if (!res.ok) throw new Error('Error al eliminar')
         Swal.fire('Eliminado', 'Medicamento eliminado', 'success')
         fetchMedications()
       } catch (err) {
@@ -120,7 +119,7 @@ const VistaMedicamentos = () => {
     ? new Date(selected.fechaVencimiento).toLocaleDateString()
     : '—'
   const imagenUrl = selected?.imagen
-    ? `http://127.0.0.1:3000/api/medicaments/image/${selected.imagen}`
+    ? `https://185.254.206.90:4080/api/medicaments/image/${selected.imagen}`
     : 'https://via.placeholder.com/400x250.png?text=Sin+Imagen'
 
   return (
