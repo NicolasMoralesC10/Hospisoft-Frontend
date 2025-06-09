@@ -1,7 +1,7 @@
 import React from 'react'
 
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
-const Usuarios = React.lazy(() => import('./views/usuarios/Usuarios'))
+/* const Usuarios = React.lazy(() => import('./views/usuarios/Usuarios')) */
 const Medicos = React.lazy(() => import('./views/medicos/Medicos'))
 const Citas = React.lazy(() => import('./views/citas/Citas'))
 const Colors = React.lazy(() => import('./views/theme/colors/Colors'))
@@ -57,7 +57,7 @@ const Widgets = React.lazy(() => import('./views/widgets/Widgets'))
 const routes = [
   { path: '/', exact: true, name: 'Home' },
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
-  { path: '/usuarios', name: 'Usuarios', element: Usuarios },
+  /* { path: '/usuarios', name: 'Usuarios', element: Usuarios }, */
   { path: '/medicos', name: 'Medicos', element: Medicos },
   { path: '/citas', name: 'Citas', element: Citas },
   { path: '/theme', name: 'Theme', element: Colors, exact: true },
