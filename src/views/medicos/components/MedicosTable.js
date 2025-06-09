@@ -26,6 +26,8 @@ import {
   flexRender,
 } from '@tanstack/react-table'
 
+import { apiFetch } from '../../../../src/helpers/apiFetch.js'
+
 // columnas de la tabla :: acessorKey es el nombre de la propiedad en el Json
 const columns = [
   { accessorKey: 'nombre', header: 'Nombre' },
@@ -89,13 +91,18 @@ const MedicosTable = ({ apiEndpoint }) => {
   const [modalVisible, setModalVisible] = useState(false)
   const [editingMedico, setEditingMedico] = useState(null)
 
-  // Fetch de datos
   const fetchMedicos = async () => {
     try {
-      const res = await fetch(apiEndpoint)
+      /* const res = await apiFetch(apiEndpoint)
       if (!res.ok) throw new Error(res.statusText)
       const json = await res.json()
-      setData(json.data || [])
+      setData(json.data || []) */
+      const payload = await apiFetch(apiEndpoint)
+      if (payload.data && Array.isArray(payload.data)) {
+        setData(payload.data)
+      } else {
+        setData([])
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -104,24 +111,10 @@ const MedicosTable = ({ apiEndpoint }) => {
   }
 
   useEffect(() => {
-    /* async function fetchMedicos() {
-      try {
-        const res = await fetch(apiEndpoint)
-        if (!res.ok) throw new Error(res.statusText)
-        const json = await res.json()
-        setData(json.data || [])
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    } */
     fetchMedicos()
   }, [apiEndpoint])
 
   const handleCreate = ({ client, user }) => {
-    // Aquí envías a tu API:
-    // POST /medicos con client, luego POST /usuarios con user y se relacionan ambos
     console.log('Cliente:', client)
     console.log('Usuario:', user)
   }
@@ -132,9 +125,7 @@ const MedicosTable = ({ apiEndpoint }) => {
     setModalVisible(true)
   }
 
-  // Función de eliminar
   const handleDelete = async (id) => {
-    // Mostrar confirmación antes de eliminar
     const confirmResult = await Swal.fire({
       title: '¿Estás seguro?',
       text: 'Esta acción eliminará al médico y su usuario asociado permanentemente.',
@@ -151,13 +142,7 @@ const MedicosTable = ({ apiEndpoint }) => {
       const apiRoot = apiEndpoint.substring(0, apiEndpoint.lastIndexOf('/'))
       const apiEndpointSearchMedico = `${apiRoot}/search/${id}`
 
-      const getMedicoResponse = await fetch(apiEndpointSearchMedico)
-
-      if (!getMedicoResponse.ok) {
-        throw new Error('Error al obtener información del médico.')
-      }
-
-      const medicoData = await getMedicoResponse.json()
+      const medicoData = await apiFetch(apiEndpointSearchMedico)
 
       if (!medicoData.estado || !medicoData.result) {
         throw new Error('No se encontró información del médico.')
@@ -171,32 +156,29 @@ const MedicosTable = ({ apiEndpoint }) => {
 
       // Eliminar médico
       const apiEndpointDeleteMedico = apiEndpoint.replace('list', 'delete')
-      const medicoResponse = await fetch(apiEndpointDeleteMedico, {
+      const medicoResponse = await apiFetch(apiEndpointDeleteMedico, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       })
 
-      if (!medicoResponse.ok) {
+      if (!medicoResponse.estado) {
         throw new Error('Error al eliminar el médico.')
       }
 
       // Eliminar usuario
       const apiEndpointDeleteUser = 'http://127.0.0.1:3000/api/user/delete'
-      const userResponse = await fetch(apiEndpointDeleteUser, {
+      const userResponse = await apiFetch(apiEndpointDeleteUser, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: userId }),
       })
 
-      if (!userResponse.ok) {
+      if (!userResponse.estado) {
         throw new Error('Error al eliminar el usuario asociado.')
       }
 
-      // Actualizar estado local
+      // Actualizar estado
       setData((prev) => prev.filter((p) => p._id !== id))
 
-      // Mostrar confirmación de éxito
       Swal.fire('Eliminado', 'Médico eliminado correctamente.', 'success')
     } catch (error) {
       Swal.fire('Error', `No se pudo completar la eliminación: ${error.message}`, 'error')

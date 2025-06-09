@@ -17,6 +17,8 @@ import {
 } from '@coreui/react'
 import { User, Lock } from 'lucide-react'
 
+import { apiFetch } from '../../../helpers/apiFetch.js'
+
 const initialClient = {
   nombre: '',
   documento: '',
@@ -39,53 +41,29 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
   const [submitting, setSubmitting] = useState(false)
   const [roles, setRoles] = useState([])
 
-  /* useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const res = await fetch(`${apiEndpoint}roles/listarmedicos`)
-        if (!res.ok) throw new Error('Error al cargar roles.')
-        const data = await res.json()
-        const list = Array.isArray(data) ? data : data.listarRoles || []
-        setRoles(list)
-
-        if (list.length > 0 && !user.rol) {
-          setUser((prev) => ({
-            ...prev,
-            rol: list[0]._id,
-          }))
-        }
-      } catch (err) {
-        console.error(err)
-      }
-    }
-    fetchRoles()
-  }, [apiEndpoint]) */
-
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await fetch(`${apiEndpoint}roles/listarmedicos`)
+        /* const res = await apiFetch(`${apiEndpoint}roles/listarmedicos`)
         if (!res.ok) throw new Error('Error al cargar roles.')
-        const data = await res.json()
+        const data = await res.json() */
 
-        // Asegúrate de manejar correctamente la respuesta
-        const list = Array.isArray(data) ? data : data.listarRoles || []
+        const payload = await apiFetch(`${apiEndpoint}roles/listarmedicos`)
+        const list = Array.isArray(payload) ? payload : payload.listarRoles || []
 
-        // Verifica que realmente hay roles médicos
         if (list.length === 0) {
-          throw new Error('No se encontraron roles de médico disponibles')
+          throw new Error('No se encontro el rol de médico.')
         }
-
         setRoles(list)
 
         // Establece el rol SIEMPRE, no solo si no existe
         setUser((prev) => ({
           ...prev,
-          rol: list[0]._id, // Usa el primer rol médico encontrado
+          rol: list[0]._id, // Setea el primer rol encontrado
         }))
       } catch (err) {
         console.error(err)
-        Swal.fire('Error', 'No se pudieron cargar los roles de médico', 'error')
+        Swal.fire('Error', 'No se pudo cargar el rol de médico.', 'error')
         setVisible(false) // Cierra el modal si no hay roles
       }
     }
@@ -94,7 +72,7 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     if (visible) {
       fetchRoles()
     }
-  }, [apiEndpoint, visible]) // Agrega visible como dependencia
+  }, [apiEndpoint, visible])
 
   useEffect(() => {
     if (!visible) {
@@ -136,14 +114,12 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
   const validateClient = () => {
     const errs = {}
 
-    // Validar nombre
     if (!client.nombre || client.nombre.trim() === '') {
       errs.nombre = 'Nombre es requerido'
     } else if (client.nombre.length < 3) {
       errs.nombre = 'El nombre debe tener al menos 3 caracteres'
     }
 
-    // Validar documento
     if (!client.documento) {
       errs.documento = 'Documento es requerido'
     } else if (client.documento < 0) {
@@ -152,14 +128,12 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
       errs.documento = 'El documento debe tener al menos 6 caracteres'
     }
 
-    // Validar teléfono
     if (!client.telefono) {
       errs.telefono = 'Teléfono es requerido'
     } else if (client.telefono.length < 6 || client.telefono.length > 10) {
       errs.telefono = 'Debe ser un teléfono valido'
     }
 
-    // Validar especialidad
     if (!client.especialidad || client.especialidad.trim() === '') {
       errs.especialidad = 'Especialidad es requerida'
     }
@@ -228,12 +202,11 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     try {
       // 1. Crear o actualizar usuario
       const { userId, userData } = await handleUserCreation()
-      userCreatedId = userId // Guardamos el ID por si necesitamos hacer rollback
+      userCreatedId = userId // Se guarda el ID por si necesitamos hacer rollback
 
       // 2. Crear o actualizar médico
       const medicoData = await handleMedicoCreation(userId)
 
-      // Éxito - Mostrar mensaje y limpiar formulario
       showSuccess()
       resetForm()
     } catch (error) {
@@ -243,11 +216,13 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     }
   }
 
-  // Funciones auxiliares
   const handleUserCreation = async () => {
+    // Operador de encadenamiento opcional (?.)
     const userId = medico?.idUsuario?._id || medico?.idUsuario || null
 
     const userPayload = {
+      // Si (isEdit === true) y userId es válido,
+      // la propiedad id con el valor userId se añade al objeto. Si no, no se agrega nada.
       ...(isEdit && userId && { id: userId }),
       username: user.username,
       email: user.email,
@@ -258,9 +233,8 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     const endpoint = isEdit && userId ? 'user/update' : 'user/create'
     const method = isEdit && userId ? 'PUT' : 'POST'
 
-    const userRes = await fetch(`${apiEndpoint}${endpoint}`, {
+    /* const userRes = await apiFetch(`${apiEndpoint}${endpoint}`, {
       method,
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userPayload),
     })
 
@@ -270,17 +244,38 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     }
 
     const userData = await userRes.json()
+
     const extractedUserId = extractUserId(userData, userId)
 
     if (!userData.estado) {
       throw new Error(userData.mensaje || 'Error al procesar usuario')
     }
 
-    return { userId: extractedUserId, userData }
+    return { userId: extractedUserId, userData } */
+
+    try {
+      // apiFetch retorna el JSON parseado o lanza error si la respuesta no es ok
+      const userData = await apiFetch(`${apiEndpoint}${endpoint}`, {
+        method,
+        body: JSON.stringify(userPayload),
+      })
+
+      const extractedUserId = extractUserId(userData, userId)
+
+      if (!userData.estado) {
+        throw new Error(userData.mensaje || 'Error al procesar usuario')
+      }
+
+      return { userId: extractedUserId, userData }
+    } catch (error) {
+      throw new Error(error.message || 'Error al crear/actualizar el usuario')
+    }
   }
 
   const handleMedicoCreation = async (userId) => {
     const payload = {
+      // Si (isEdit === true) y medico._id es válido,
+      // la propiedad id con el valor medico._id se añade al objeto. Si no, no se agrega nada.
       ...(isEdit && medico?._id && { id: medico._id }),
       nombre: client.nombre,
       documento: Number(client.documento),
@@ -292,9 +287,8 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     const endpoint = isEdit && medico?._id ? 'medico/update' : 'medico/create'
     const method = isEdit && medico?._id ? 'PUT' : 'POST'
 
-    const res = await fetch(`${apiEndpoint}${endpoint}`, {
+    /* const res = await apiFetch(`${apiEndpoint}${endpoint}`, {
       method,
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
 
@@ -308,18 +302,34 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
       throw new Error(data.mensaje || 'Error al procesar médico')
     }
 
-    return data
+    return data */
+
+    try {
+      // apiFetch ya retorna el JSON parseado o lanza error si no es ok
+      const data = await apiFetch(`${apiEndpoint}${endpoint}`, {
+        method,
+        body: JSON.stringify(payload),
+      })
+
+      if (!data.estado) {
+        throw new Error(data.mensaje || 'Error al procesar médico')
+      }
+
+      return data
+    } catch (error) {
+      // Puedes manejar o relanzar el error para que lo capture quien llame a esta función
+      throw new Error(error.message || 'Error al crear/actualizar médico')
+    }
   }
 
   const handleError = async (error, userId) => {
     console.error('Error completo:', error)
 
-    // Si tenemos un usuario creado pero falló el médico, hacemos rollback
+    // Si hay un usuario creado pero falló al crear el médico, se hace el rollback
     if (userId && !isEdit) {
       try {
-        await fetch(`${apiEndpoint}user/delete`, {
+        await apiFetch(`${apiEndpoint}user/delete`, {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: userId }),
         })
       } catch (rollbackError) {
@@ -330,7 +340,7 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     const errorMessage = error.message || '¡Error desconocido!'
     Swal.fire('Error', errorMessage, 'error')
 
-    // Determinar qué paso mostrar basado en el error
+    // Mostrar error
     if (errorMessage.toLowerCase().includes('usuario')) {
       setStep(1)
     } else if (
@@ -341,7 +351,6 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     }
   }
 
-  // Funciones utilitarias
   const extractUserId = (userData, fallbackId) => {
     return (
       userData.data?._id ||
@@ -390,16 +399,14 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
         if (user.password && user.password.trim() !== '') {
           userPayload.password = user.password
         }
-        userRes = await fetch(`${apiEndpoint}user/update`, {
+        userRes = await apiFetch(`${apiEndpoint}user/update`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(userPayload),
         })
       } else {
         // Crear usuario (POST)
-        userRes = await fetch(`${apiEndpoint}user/create`, {
+        userRes = await apiFetch(`${apiEndpoint}user/create`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             username: user.username,
             email: user.email,
@@ -440,9 +447,8 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
           telefono: Number(client.telefono),
           especialidad: client.especialidad,
         }
-        clientRes = await fetch(`${apiEndpoint}medico/update`, {
+        clientRes = await apiFetch(`${apiEndpoint}medico/update`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(clientPayload),
         })
       } else {
@@ -454,9 +460,8 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
           especialidad: client.especialidad,
           idUsuario,
         }
-        clientRes = await fetch(`${apiEndpoint}medico/create`, {
+        clientRes = await apiFetch(`${apiEndpoint}medico/create`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(clientPayload),
         })
       }

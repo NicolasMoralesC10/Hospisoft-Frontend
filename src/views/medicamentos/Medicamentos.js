@@ -18,6 +18,7 @@ import { Info } from 'lucide-react'
 import Swal from 'sweetalert2'
 import MedicationCard from './components/MedicationCard'
 import MedicationTimelineModal from './components/MedicationTimelineModal'
+import { apiFetch } from '../../helpers/apiFetch.js'
 
 const imageContainerStyle = {
   width: '100%',
@@ -65,9 +66,7 @@ const VistaMedicamentos = () => {
   const fetchMedications = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`${API_URL}/list`)
-      if (!res.ok) throw new Error(res.statusText)
-      const json = await res.json()
+      const json = await apiFetch(`${API_URL}/list`)
       setMedications(json.data || [])
     } catch (err) {
       console.error(err)
@@ -100,14 +99,13 @@ const VistaMedicamentos = () => {
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
     })
+
     if (result.isConfirmed) {
       try {
-        const res = await fetch(`${API_URL}/delet`, {
+        await apiFetch(`${API_URL}/delet`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id }),
         })
-        if (!res.ok) throw new Error('Error al eliminar')
         Swal.fire('Eliminado', 'Medicamento eliminado', 'success')
         fetchMedications()
       } catch (err) {

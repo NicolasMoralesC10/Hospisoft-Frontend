@@ -18,6 +18,7 @@ import { Pill, DollarSign } from 'lucide-react'
 import Flatpickr from 'react-flatpickr'
 import 'flatpickr/dist/flatpickr.css'
 import 'flatpickr/dist/themes/material_blue.css'
+import { apiFetch } from '../../../helpers/apiFetch.js'
 
 const initialValues = {
   nombre: '',
@@ -132,8 +133,8 @@ const MedicationTimelineModal = ({ visible, setVisible, mode, data, apiEndpoint,
       formData.append('prVenta', form.precioVenta)
       if (form.imagenFile) formData.append('img', form.imagenFile)
 
-      const res = await fetch(url, { method, body: formData })
-      if (!res.ok) throw new Error('Error en servidor')
+      await apiFetch(url, { method, body: formData })
+
       Swal.fire('Éxito', 'Medicamento guardado', 'success')
       setVisible(false)
       onSuccess && onSuccess()
