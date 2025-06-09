@@ -17,6 +17,8 @@ import {
 } from '@coreui/react'
 import { User, Lock } from 'lucide-react'
 
+import { apiFetch } from '../../../helpers/apiFetch.js'
+
 const initialClient = {
   nombre: '',
   documento: '',
@@ -42,10 +44,12 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await fetch(`${apiEndpoint}roles/listarmedicos`)
+        /* const res = await apiFetch(`${apiEndpoint}roles/listarmedicos`)
         if (!res.ok) throw new Error('Error al cargar roles.')
-        const data = await res.json()
-        const list = Array.isArray(data) ? data : data.listarRoles || []
+        const data = await res.json() */
+
+        const payload = await apiFetch(`${apiEndpoint}roles/listarmedicos`)
+        const list = Array.isArray(payload) ? payload : payload.listarRoles || []
 
         if (list.length === 0) {
           throw new Error('No se encontro el rol de médico.')
@@ -229,9 +233,8 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     const endpoint = isEdit && userId ? 'user/update' : 'user/create'
     const method = isEdit && userId ? 'PUT' : 'POST'
 
-    const userRes = await fetch(`${apiEndpoint}${endpoint}`, {
+    /* const userRes = await apiFetch(`${apiEndpoint}${endpoint}`, {
       method,
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userPayload),
     })
 
@@ -241,13 +244,32 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     }
 
     const userData = await userRes.json()
+
     const extractedUserId = extractUserId(userData, userId)
 
     if (!userData.estado) {
       throw new Error(userData.mensaje || 'Error al procesar usuario')
     }
 
-    return { userId: extractedUserId, userData }
+    return { userId: extractedUserId, userData } */
+
+    try {
+      // apiFetch retorna el JSON parseado o lanza error si la respuesta no es ok
+      const userData = await apiFetch(`${apiEndpoint}${endpoint}`, {
+        method,
+        body: JSON.stringify(userPayload),
+      })
+
+      const extractedUserId = extractUserId(userData, userId)
+
+      if (!userData.estado) {
+        throw new Error(userData.mensaje || 'Error al procesar usuario')
+      }
+
+      return { userId: extractedUserId, userData }
+    } catch (error) {
+      throw new Error(error.message || 'Error al crear/actualizar el usuario')
+    }
   }
 
   const handleMedicoCreation = async (userId) => {
@@ -265,9 +287,8 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     const endpoint = isEdit && medico?._id ? 'medico/update' : 'medico/create'
     const method = isEdit && medico?._id ? 'PUT' : 'POST'
 
-    const res = await fetch(`${apiEndpoint}${endpoint}`, {
+    /* const res = await apiFetch(`${apiEndpoint}${endpoint}`, {
       method,
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
 
@@ -281,7 +302,24 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
       throw new Error(data.mensaje || 'Error al procesar médico')
     }
 
-    return data
+    return data */
+
+    try {
+      // apiFetch ya retorna el JSON parseado o lanza error si no es ok
+      const data = await apiFetch(`${apiEndpoint}${endpoint}`, {
+        method,
+        body: JSON.stringify(payload),
+      })
+
+      if (!data.estado) {
+        throw new Error(data.mensaje || 'Error al procesar médico')
+      }
+
+      return data
+    } catch (error) {
+      // Puedes manejar o relanzar el error para que lo capture quien llame a esta función
+      throw new Error(error.message || 'Error al crear/actualizar médico')
+    }
   }
 
   const handleError = async (error, userId) => {
@@ -290,9 +328,8 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
     // Si hay un usuario creado pero falló al crear el médico, se hace el rollback
     if (userId && !isEdit) {
       try {
-        await fetch(`${apiEndpoint}user/delete`, {
+        await apiFetch(`${apiEndpoint}user/delete`, {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: userId }),
         })
       } catch (rollbackError) {
@@ -362,16 +399,14 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
         if (user.password && user.password.trim() !== '') {
           userPayload.password = user.password
         }
-        userRes = await fetch(`${apiEndpoint}user/update`, {
+        userRes = await apiFetch(`${apiEndpoint}user/update`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(userPayload),
         })
       } else {
         // Crear usuario (POST)
-        userRes = await fetch(`${apiEndpoint}user/create`, {
+        userRes = await apiFetch(`${apiEndpoint}user/create`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             username: user.username,
             email: user.email,
@@ -412,9 +447,8 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
           telefono: Number(client.telefono),
           especialidad: client.especialidad,
         }
-        clientRes = await fetch(`${apiEndpoint}medico/update`, {
+        clientRes = await apiFetch(`${apiEndpoint}medico/update`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(clientPayload),
         })
       } else {
@@ -426,9 +460,8 @@ const MedicoTimelineModal = ({ visible, setVisible, apiEndpoint, medico, isEdit,
           especialidad: client.especialidad,
           idUsuario,
         }
-        clientRes = await fetch(`${apiEndpoint}medico/create`, {
+        clientRes = await apiFetch(`${apiEndpoint}medico/create`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(clientPayload),
         })
       }

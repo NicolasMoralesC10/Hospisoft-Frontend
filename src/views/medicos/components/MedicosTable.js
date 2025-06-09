@@ -26,6 +26,8 @@ import {
   flexRender,
 } from '@tanstack/react-table'
 
+import { apiFetch } from '../../../helpers/apiFetch.js'
+
 // columnas de la tabla :: acessorKey es el nombre de la propiedad en el Json
 const columns = [
   { accessorKey: 'nombre', header: 'Nombre' },
@@ -91,10 +93,16 @@ const MedicosTable = ({ apiEndpoint }) => {
 
   const fetchMedicos = async () => {
     try {
-      const res = await fetch(apiEndpoint)
+      /* const res = await apiFetch(apiEndpoint)
       if (!res.ok) throw new Error(res.statusText)
       const json = await res.json()
-      setData(json.data || [])
+      setData(json.data || []) */
+      const payload = await apiFetch(apiEndpoint)
+      if (payload.data && Array.isArray(payload.data)) {
+        setData(payload.data)
+      } else {
+        setData([])
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -134,13 +142,7 @@ const MedicosTable = ({ apiEndpoint }) => {
       const apiRoot = apiEndpoint.substring(0, apiEndpoint.lastIndexOf('/'))
       const apiEndpointSearchMedico = `${apiRoot}/search/${id}`
 
-      const getMedicoResponse = await fetch(apiEndpointSearchMedico)
-
-      if (!getMedicoResponse.ok) {
-        throw new Error('Error al obtener información del médico.')
-      }
-
-      const medicoData = await getMedicoResponse.json()
+      const medicoData = await apiFetch(apiEndpointSearchMedico)
 
       if (!medicoData.estado || !medicoData.result) {
         throw new Error('No se encontró información del médico.')
@@ -154,25 +156,23 @@ const MedicosTable = ({ apiEndpoint }) => {
 
       // Eliminar médico
       const apiEndpointDeleteMedico = apiEndpoint.replace('list', 'delete')
-      const medicoResponse = await fetch(apiEndpointDeleteMedico, {
+      const medicoResponse = await apiFetch(apiEndpointDeleteMedico, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       })
 
-      if (!medicoResponse.ok) {
+      if (!medicoResponse.estado) {
         throw new Error('Error al eliminar el médico.')
       }
 
       // Eliminar usuario
-      const apiEndpointDeleteUser = 'https://185.254.206.90:4080/api/user/delete'
-      const userResponse = await fetch(apiEndpointDeleteUser, {
+      const apiEndpointDeleteUser = 'http://127.0.0.1:3000/api/user/delete'
+      const userResponse = await apiFetch(apiEndpointDeleteUser, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: userId }),
       })
 
-      if (!userResponse.ok) {
+      if (!userResponse.estado) {
         throw new Error('Error al eliminar el usuario asociado.')
       }
 
