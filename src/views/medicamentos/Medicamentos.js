@@ -19,7 +19,7 @@ import Swal from 'sweetalert2'
 import MedicationCard from './components/MedicationCard'
 import MedicationTimelineModal from './components/MedicationTimelineModal'
 
-import { apiFetch } from '../../../helpers/apiFetch.js'
+import { apiFetch } from '../../helpers/apiFetch.js'
 
 const imageContainerStyle = {
   width: '100%',
