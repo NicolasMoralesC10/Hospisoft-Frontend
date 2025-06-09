@@ -25,6 +25,8 @@ import {
   flexRender,
 } from '@tanstack/react-table'
 
+import { apiFetch } from '../../../helpers/apiFetch.js'
+
 // columnas de la tabla :: acessorKey es el nombre de la propiedad en el Json
 const columns = [
   { accessorKey: 'nombrePaciente', header: 'Nombre' },
@@ -90,10 +92,10 @@ const PacientesTable = ({ apiEndpoint }) => {
   const [editingPaciente, setEditingPaciente] = useState(null)
 
   const fetchPacientes = async () => {
+    setLoading(true)
+    setError(null)
     try {
-      const res = await fetch(apiEndpoint + 'patient/list')
-      if (!res.ok) throw new Error(res.statusText)
-      const json = await res.json()
+      const json = await apiFetch(apiEndpoint + 'patient/list')
       setData(json.data || [])
     } catch (err) {
       setError(err.message)
@@ -102,18 +104,15 @@ const PacientesTable = ({ apiEndpoint }) => {
     }
   }
 
-  const handleEdit = async (paciente) => {
-    // spread operator: pasa las propiedades del objeto 'Paciente' directamente dentro de uno nuevo.
+  const handleEdit = (paciente) => {
     setEditingPaciente({ ...paciente })
     setModalVisible(true)
   }
 
-  // Fetch de datos
   useEffect(() => {
     fetchPacientes()
   }, [apiEndpoint])
 
-  // Función de eliminar
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: '¿Estás seguro?',
@@ -123,14 +122,13 @@ const PacientesTable = ({ apiEndpoint }) => {
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
     })
+
     if (result.isConfirmed) {
       try {
-        const res = await fetch(apiEndpoint + 'patient/delet', {
+        await apiFetch(apiEndpoint + 'patient/delet', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id }),
         })
-        if (!res.ok) throw new Error('Error al eliminar')
         await fetchPacientes()
         Swal.fire('Eliminado!', 'El paciente ha sido eliminado.', 'success')
       } catch (err) {

@@ -21,6 +21,8 @@ import {
 } from '@coreui/react'
 import { User, Lock, Drill } from 'lucide-react'
 
+import { apiFetch } from '../../../helpers/apiFetch.js'
+
 const initialClient = {
   nombre: '',
   documento: '',
@@ -56,9 +58,7 @@ const PacienteTimelineModal = ({
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await fetch(`${apiEndpoint}roles/listarpacientes`)
-        if (!res.ok) throw new Error('Error al cargar roles')
-        const data = await res.json()
+        const data = await apiFetch(`${apiEndpoint}roles/listarpacientes`)
         const list = Array.isArray(data) ? data : data.listarRoles || []
 
         if (list.length > 0) {
@@ -167,79 +167,57 @@ const PacienteTimelineModal = ({
     try {
       let userId = paciente?.idUsuario?._id || paciente?.idUsuario || null
 
-      let userRes
+      let userPayload = {
+        username: user.username,
+        email: user.email,
+        rol: user.rol,
+      }
       if (isEdit && userId) {
-        const userPayload = {
-          id: userId,
-          username: user.username,
-          email: user.email,
-          rol: user.rol,
-        }
-        // Solo incluir password si no está vacío ni es solo espacios
+        userPayload.id = userId
         if (user.password && user.password.trim() !== '') {
           userPayload.password = user.password
         }
-        console.log(user.password)
-        userRes = await fetch(`${apiEndpoint}user/update`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userPayload),
-        })
       } else {
-        userRes = await fetch(`${apiEndpoint}user/create`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: user.username,
-            email: user.email,
-            password: user.password,
-            rol: user.rol,
-          }),
-        })
+        userPayload.password = user.password
       }
 
-      if (!userRes.ok) {
-        const msg = await userRes.text()
-        throw new Error(`Error al crear usuario: ${msg}`)
-      }
+      // Crear o actualizar usuario
+      const userRes = await apiFetch(
+        `${apiEndpoint}${isEdit && userId ? 'user/update' : 'user/create'}`,
+        {
+          method: isEdit && userId ? 'PUT' : 'POST',
+          body: JSON.stringify(userPayload),
+        },
+      )
 
-      const userData = await userRes.json()
-      const idUsuario = userData._id || userData.id || (userData.data && userData.data._id)
+      const idUsuario = userRes._id || userRes.id || (userRes.data && userRes.data._id)
       if (!idUsuario) throw new Error('No se obtuvo idUsuario del paciente')
 
-      let pacienteId = paciente?._id || null
-      let clientRes
+      let clientPayload = {
+        nombre: client.nombre,
+        documento: client.documento,
+        telefono: client.telefono,
+        nacimiento: client.nacimiento,
+        eps: client.eps,
+        estadoCivil: client.estadoCivil,
+        sexo: client.sexo,
+        direccion: client.direccion,
+      }
+
       if (isEdit && paciente?._id) {
-        clientRes = await fetch(`${apiEndpoint}patient/update`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: pacienteId,
-            nombre: client.nombre,
-            documento: client.documento,
-            telefono: client.telefono,
-            nacimiento: client.nacimiento,
-            eps: client.eps,
-            estadoCivil: client.estadoCivil,
-            sexo: client.sexo,
-            direccion: client.direccion,
-          }),
-        })
+        clientPayload.id = paciente._id
       } else {
-        const clientPayload = { ...client, idUsuario }
-        clientRes = await fetch(`${apiEndpoint}patient/create`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        clientPayload.idUsuario = idUsuario
+      }
+
+      // Crear o actualizar paciente
+      await apiFetch(
+        `${apiEndpoint}${isEdit && paciente?._id ? 'patient/update' : 'patient/create'}`,
+        {
+          method: isEdit && paciente?._id ? 'PUT' : 'POST',
           body: JSON.stringify(clientPayload),
-        })
-      }
-
-      if (!clientRes.ok) {
-        const msg = await clientRes.text()
-        throw new Error(`Error al crear paciente: ${msg}`)
-      }
-
-      await clientRes.json()
+        },
+      )
 
       Swal.fire('Éxito', 'Usuario y paciente creados correctamente', 'success')
       setVisible(false)
