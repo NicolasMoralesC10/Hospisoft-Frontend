@@ -30,7 +30,7 @@ const Login = () => {
     setError('')
 
     try {
-      const data = await apiFetch('http://127.0.0.1:3000/api/login', {
+      const data = await apiFetch('https://185.254.206.90:4080/api/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       })
