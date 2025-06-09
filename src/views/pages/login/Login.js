@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   CButton,
   CCard,
@@ -35,10 +35,7 @@ const Login = () => {
         body: JSON.stringify({ email, password }),
       })
 
-      // Usar la función login del contexto para guardar token y usuario
       login(data.token, data.user)
-
-      // Redirigir a ruta protegida
       navigate('/dashboard')
     } catch (err) {
       setError(err.message || 'Error de conexión')
@@ -54,15 +51,15 @@ const Login = () => {
               <CCard className="p-4">
                 <CCardBody>
                   <CForm onSubmit={handleSubmit}>
-                    <h1>Login</h1>
-                    <p className="text-body-secondary">Sign In to your account</p>
+                    <h1>Iniciar sesión</h1>
+                    <p className="text-body-secondary">Ingrese a su cuenta</p>
                     {error && <div className="alert alert-danger">{error}</div>}
                     <CInputGroup className="mb-3">
                       <CInputGroupText>
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
                       <CFormInput
-                        placeholder="Email"
+                        placeholder="Correo electrónico"
                         autoComplete="username"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -75,7 +72,7 @@ const Login = () => {
                       </CInputGroupText>
                       <CFormInput
                         type="password"
-                        placeholder="Password"
+                        placeholder="Contraseña"
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -85,12 +82,12 @@ const Login = () => {
                     <CRow>
                       <CCol xs={6}>
                         <CButton color="primary" className="px-4" type="submit">
-                          Login
+                          Iniciar sesión
                         </CButton>
                       </CCol>
                       <CCol xs={6} className="text-right">
                         <CButton color="link" className="px-0">
-                          Forgot password?
+                          ¿Olvidó su contraseña?
                         </CButton>
                       </CCol>
                     </CRow>
@@ -98,19 +95,11 @@ const Login = () => {
                 </CCardBody>
               </CCard>
               <CCard className="text-white bg-primary py-5" style={{ width: '44%' }}>
-                <CCardBody className="text-center">
-                  <div>
-                    <h2>Sign up</h2>
-                    <p>
-                      Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                      tempor incididunt ut labore et dolore magna aliqua.
-                    </p>
-                    <Link to="/register">
-                      <CButton color="primary" className="mt-3" active tabIndex={-1}>
-                        Register Now!
-                      </CButton>
-                    </Link>
-                  </div>
+                <CCardBody className="text-center d-flex flex-column justify-content-center h-100">
+                  <h2>Bienvenido a Hospisoft</h2>
+                  <p>
+                    Accede con tus credenciales para administrar pacientes, médicos, citas y más.
+                  </p>
                 </CCardBody>
               </CCard>
             </CCardGroup>
