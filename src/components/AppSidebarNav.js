@@ -1,6 +1,7 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import PropTypes from 'prop-types'
+import { useAuth } from '../context/AuthContext'
 
 import SimpleBar from 'simplebar-react'
 import 'simplebar-react/dist/simplebar.min.css'
@@ -8,6 +9,8 @@ import 'simplebar-react/dist/simplebar.min.css'
 import { CBadge, CNavLink, CSidebarNav } from '@coreui/react'
 
 export const AppSidebarNav = ({ items }) => {
+  const { rol } = useAuth()
+
   const navLink = (name, icon, badge, indent = false) => {
     return (
       <>
@@ -29,7 +32,9 @@ export const AppSidebarNav = ({ items }) => {
   }
 
   const navItem = (item, index, indent = false) => {
-    const { component, name, badge, icon, ...rest } = item
+    const { component, name, badge, icon, roles, ...rest } = item
+    if (roles && !roles.includes(rol)) return null
+
     const Component = component
     return (
       <Component as="div" key={index}>
@@ -49,21 +54,30 @@ export const AppSidebarNav = ({ items }) => {
   }
 
   const navGroup = (item, index) => {
-    const { component, name, icon, items, to, ...rest } = item
+    const { component, name, icon, items: subItems, to, roles, ...rest } = item
+    if (roles && !roles.includes(rol)) return null
+
     const Component = component
     return (
       <Component compact as="div" key={index} toggler={navLink(name, icon)} {...rest}>
-        {items?.map((item, index) =>
-          item.items ? navGroup(item, index) : navItem(item, index, true),
+        {subItems?.map((subItem, subIndex) =>
+          subItem.items ? navGroup(subItem, subIndex) : navItem(subItem, subIndex, true),
         )}
       </Component>
     )
   }
 
+  // Filtrar items principales que no correspondan al rol
+  const filteredItems = items.filter((item) => {
+    if (!item.roles) return true
+    return item.roles.includes(rol)
+  })
+
   return (
     <CSidebarNav as={SimpleBar}>
-      {items &&
-        items.map((item, index) => (item.items ? navGroup(item, index) : navItem(item, index)))}
+      {filteredItems.map((item, index) =>
+        item.items ? navGroup(item, index) : navItem(item, index),
+      )}
     </CSidebarNav>
   )
 }

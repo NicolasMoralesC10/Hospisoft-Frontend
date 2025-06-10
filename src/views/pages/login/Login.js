@@ -35,7 +35,7 @@ const Login = () => {
         body: JSON.stringify({ email, password }),
       })
 
-      login(data.token, data.user)
+      login(data.token, data.user, data.rol)
       navigate('/dashboard')
     } catch (err) {
       setError(err.message || 'Error de conexión')
