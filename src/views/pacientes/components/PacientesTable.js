@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { UserRoundX, UserRoundPen } from 'lucide-react'
 import Swal from 'sweetalert2'
 import PacienteTimelineModal from './PacienteTimelineModal'
+import { apiFetch } from '../../../helpers/apiFetch.js'
 import {
   CCard,
   CCardHeader,
@@ -91,9 +92,7 @@ const PacientesTable = ({ apiEndpoint }) => {
 
   const fetchPacientes = async () => {
     try {
-      const res = await fetch(apiEndpoint + 'patient/list')
-      if (!res.ok) throw new Error(res.statusText)
-      const json = await res.json()
+      const json = await apiFetch(apiEndpoint + 'patient/list')
       setData(json.data || [])
     } catch (err) {
       setError(err.message)
@@ -113,7 +112,6 @@ const PacientesTable = ({ apiEndpoint }) => {
     fetchPacientes()
   }, [apiEndpoint])
 
-  // Función de eliminar
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: '¿Estás seguro?',
@@ -125,12 +123,10 @@ const PacientesTable = ({ apiEndpoint }) => {
     })
     if (result.isConfirmed) {
       try {
-        const res = await fetch(apiEndpoint + 'patient/delet', {
+        await apiFetch(apiEndpoint + 'patient/delet', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id }),
         })
-        if (!res.ok) throw new Error('Error al eliminar')
         await fetchPacientes()
         Swal.fire('Eliminado!', 'El paciente ha sido eliminado.', 'success')
       } catch (err) {

@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { useEffect } from 'react'
 import Swal from 'sweetalert2'
+import { apiFetch } from '../../../helpers/apiFetch.js'
 import {
   CModal,
   CModalHeader,
@@ -56,9 +57,7 @@ const PacienteTimelineModal = ({
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await fetch(`${apiEndpoint}roles/listarpacientes`)
-        if (!res.ok) throw new Error('Error al cargar roles')
-        const data = await res.json()
+        const data = await apiFetch(`${apiEndpoint}roles/listarpacientes`)
         const list = Array.isArray(data) ? data : data.listarRoles || []
 
         if (list.length > 0) {
@@ -68,7 +67,7 @@ const PacienteTimelineModal = ({
           }))
         }
       } catch (err) {
-        console.error(err)
+        console.error('Error al cargar roles:', err.message)
       }
     }
     fetchRoles()
@@ -162,105 +161,87 @@ const PacienteTimelineModal = ({
     return Object.keys(errs).length === 0
   }
 
-  const handleSubmit = async () => {
-    setSubmitting(true)
-    try {
-      let userId = paciente?.idUsuario?._id || paciente?.idUsuario || null
-
-      let userRes
-      if (isEdit && userId) {
-        const userPayload = {
-          id: userId,
-          username: user.username,
-          email: user.email,
-          rol: user.rol,
-        }
-        // Solo incluir password si no está vacío ni es solo espacios
-        if (user.password && user.password.trim() !== '') {
-          userPayload.password = user.password
-        }
-        console.log(user.password)
-        userRes = await fetch(`${apiEndpoint}user/update`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userPayload),
-        })
-      } else {
-        userRes = await fetch(`${apiEndpoint}user/create`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: user.username,
-            email: user.email,
-            password: user.password,
-            rol: user.rol,
-          }),
-        })
-      }
-
-      if (!userRes.ok) {
-        const msg = await userRes.text()
-        throw new Error(`Error al crear usuario: ${msg}`)
-      }
-
-      const userData = await userRes.json()
-      const idUsuario = userData._id || userData.id || (userData.data && userData.data._id)
-      if (!idUsuario) throw new Error('No se obtuvo idUsuario del paciente')
-
-      let pacienteId = paciente?._id || null
-      let clientRes
-      if (isEdit && paciente?._id) {
-        clientRes = await fetch(`${apiEndpoint}patient/update`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: pacienteId,
-            nombre: client.nombre,
-            documento: client.documento,
-            telefono: client.telefono,
-            nacimiento: client.nacimiento,
-            eps: client.eps,
-            estadoCivil: client.estadoCivil,
-            sexo: client.sexo,
-            direccion: client.direccion,
-          }),
-        })
-      } else {
-        const clientPayload = { ...client, idUsuario }
-        clientRes = await fetch(`${apiEndpoint}patient/create`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(clientPayload),
-        })
-      }
-
-      if (!clientRes.ok) {
-        const msg = await clientRes.text()
-        throw new Error(`Error al crear paciente: ${msg}`)
-      }
-
-      await clientRes.json()
-
-      Swal.fire('Éxito', 'Usuario y paciente creados correctamente', 'success')
-      setVisible(false)
-      setStep(1)
-      setClient(initialClient)
-      setUser(initialUser)
-      setErrors({})
-    } catch (error) {
-      const mensaje = error.message || 'Error desconocido'
-      Swal.fire('Error', mensaje, 'error')
-
-      if (mensaje.includes('usuario')) {
-        setStep(1)
-      } else if (mensaje.includes('paciente')) {
-        setStep(2)
-      }
-    } finally {
-      onSuccess && onSuccess()
-      setSubmitting(false)
+const handleSubmit = async () => {
+  setSubmitting(true)
+  try {
+    // --- Validación de campos requeridos ---
+    if (!user.username || !user.email || !user.rol) {
+      throw new Error('Por favor completa todos los campos obligatorios del usuario')
     }
+    if (!isEdit && (!user.password || user.password.trim() === '')) {
+      throw new Error('La contraseña es obligatoria para crear un nuevo usuario')
+    }
+
+    // --- Paso 1: Crear o actualizar el usuario ---
+    const userId = paciente?.idUsuario?._id || paciente?.idUsuario || null
+
+    const isEditUser = isEdit && userId
+    const userPayload = {
+      ...(isEditUser ? { id: userId } : {}),
+      username: user.username,
+      email: user.email,
+      rol: user.rol,
+    }
+
+    if (user.password && user.password.trim() !== '') {
+      userPayload.password = user.password
+    }
+
+    const userResData = await apiFetch(`${apiEndpoint}user/${isEditUser ? 'update' : 'create'}`, {
+      method: isEditUser ? 'PUT' : 'POST',
+      body: JSON.stringify(userPayload),
+    })
+
+    const idUsuario =
+      userResData._id || userResData.id || (userResData.data && userResData.data._id)
+    if (!idUsuario) throw new Error('No se obtuvo idUsuario del paciente')
+
+    // --- Paso 2: Crear o actualizar el paciente con el idUsuario ---
+    const isEditPaciente = isEdit && paciente?._id
+    const pacientePayload = isEditPaciente
+      ? {
+          id: paciente._id,
+          nombre: client.nombre,
+          documento: client.documento,
+          telefono: client.telefono,
+          nacimiento: client.nacimiento,
+          eps: client.eps,
+          estadoCivil: client.estadoCivil,
+          sexo: client.sexo,
+          direccion: client.direccion,
+        }
+      : {
+          ...client,
+          idUsuario,
+        }
+
+    const pacienteResData = await apiFetch(`${apiEndpoint}patient/${isEditPaciente ? 'update' : 'create'}`, {
+      method: isEditPaciente ? 'PUT' : 'POST',
+      body: JSON.stringify(pacientePayload),
+    })
+
+    // --- Finalizar y resetear el formulario ---
+    Swal.fire('Éxito', 'Usuario y paciente creados correctamente', 'success')
+    setVisible(false)
+    setStep(1)
+    setClient(initialClient)
+    setUser(initialUser)
+    setErrors({})
+  } catch (error) {
+    const mensaje = error.message || 'Error desconocido'
+    Swal.fire('Error', mensaje, 'error')
+
+    if (mensaje.includes('usuario')) {
+      setStep(1)
+    } else if (mensaje.includes('paciente')) {
+      setStep(2)
+    }
+  } finally {
+    onSuccess && onSuccess()
+    setSubmitting(false)
   }
+}
+
 
   const handleNext = () => {
     if (step === 1 && validateUser()) setStep(2)
@@ -336,13 +317,11 @@ const PacienteTimelineModal = ({
               <CCol md={5} className="mb-3">
                 <CFormLabel htmlFor="validationServerUsername">Usuario</CFormLabel>
                 <CInputGroup className="has-validation">
-                  <CInputGroupText id="inputGroupPrepend03">@</CInputGroupText>
                   <CFormInput
                     type="text"
                     value={user.username}
                     id="validationServerUsername"
                     invalid={!!errors.username}
-                    aria-describedby="inputGroupPrepend03"
                     valid={!errors.username && user.username}
                     onChange={(e) => setUser({ ...user, username: e.target.value })}
                   />
