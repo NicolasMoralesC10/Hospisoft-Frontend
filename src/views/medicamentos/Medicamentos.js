@@ -18,6 +18,7 @@ import { Info } from 'lucide-react'
 import Swal from 'sweetalert2'
 import MedicationCard from './components/MedicationCard'
 import MedicationTimelineModal from './components/MedicationTimelineModal'
+import { useFetchImage } from './hooks/useFetchImage.js'
 import { apiFetch } from '../../helpers/apiFetch.js'
 
 const imageContainerStyle = {
@@ -61,6 +62,9 @@ const VistaMedicamentos = () => {
   const [modalMode, setModalMode] = useState('create')
   const [detailVisible, setDetailVisible] = useState(false)
   const [selected, setSelected] = useState(null)
+  const { fetchImage } = useFetchImage()
+  const [imageUrl, setImageUrl] = useState('')
+
   const API_URL = 'http://127.0.0.1:3000/api/medicaments'
 
   const fetchMedications = async () => {
@@ -79,6 +83,12 @@ const VistaMedicamentos = () => {
   useEffect(() => {
     fetchMedications()
   }, [])
+
+  useEffect(() => {
+    if (selected?.imagen) {
+      fetchImage(selected.imagen).then(setImageUrl)
+    }
+  }, [selected])
 
   const openModal = (mode, med = null) => {
     setModalMode(mode)
@@ -117,15 +127,12 @@ const VistaMedicamentos = () => {
   const vencimiento = selected?.fechaVencimiento
     ? new Date(selected.fechaVencimiento).toLocaleDateString()
     : '—'
-  const imagenUrl = selected?.imagen
-    ? `http://127.0.0.1:3000/api/medicaments/image/${selected.imagen}`
-    : 'https://via.placeholder.com/400x250.png?text=Sin+Imagen'
 
   return (
     <>
       <CRow className="mb-4">
         <CCol>
-          <CButton color="light" onClick={() => openModal('create')}>
+          <CButton color="info" className="text-white" onClick={() => openModal('create')}>
             + Agregar Medicamento
           </CButton>
         </CCol>
@@ -183,7 +190,7 @@ const VistaMedicamentos = () => {
                     className="mb-4 mb-md-0 d-flex flex-column align-items-center justify-content-center"
                   >
                     <div style={imageContainerStyle}>
-                      <img src={imagenUrl} alt={selected.nombre} style={imageStyle} />
+                      <img src={imageUrl} alt={selected?.nombre} style={imageStyle} />
                     </div>
                     <CBadge
                       color={selected.stockDisponible > 0 ? 'success' : 'danger'}
@@ -219,8 +226,8 @@ const VistaMedicamentos = () => {
                         <div style={valueStyle}>{selected.viaAdminist}</div>
                       </CCol>
                       <CCol xs={6}>
-                        <span style={labelStyle}>Unidad Medida:</span>
-                        <div style={valueStyle}>{selected.uniMedida || '—'}</div>
+                        <span style={labelStyle}>Vencimiento:</span>
+                        <div style={valueStyle}>{vencimiento}</div>
                       </CCol>
                     </CRow>
                     <CRow className="mb-2">
@@ -229,8 +236,10 @@ const VistaMedicamentos = () => {
                         <div style={valueStyle}>{selected.stockDisponible}</div>
                       </CCol>
                       <CCol xs={6}>
-                        <span style={labelStyle}>Vencimiento:</span>
-                        <div style={valueStyle}>{vencimiento}</div>
+                        <span style={labelStyle}>Precio Venta:</span>
+                        <div style={valueStyle}>
+                          ${selected.precioVenta?.toLocaleString() || '—'}
+                        </div>
                       </CCol>
                     </CRow>
                     <CRow className="mb-2">
@@ -240,21 +249,7 @@ const VistaMedicamentos = () => {
                           ${selected.precioCompra?.toLocaleString() || '—'}
                         </div>
                       </CCol>
-                      <CCol xs={6}>
-                        <span style={labelStyle}>Precio Venta:</span>
-                        <div style={valueStyle}>
-                          ${selected.precioVenta?.toLocaleString() || '—'}
-                        </div>
-                      </CCol>
                     </CRow>
-                    {selected.descripcion && (
-                      <CRow className="mt-3">
-                        <CCol>
-                          <span style={labelStyle}>Descripción:</span>
-                          <div style={valueStyle}>{selected.descripcion}</div>
-                        </CCol>
-                      </CRow>
-                    )}
                   </CCol>
                 </CRow>
               </CCardBody>
