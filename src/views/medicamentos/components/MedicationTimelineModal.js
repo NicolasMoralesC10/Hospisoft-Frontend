@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Swal from 'sweetalert2'
 import {
   CModal,
@@ -11,24 +11,11 @@ import {
   CFormLabel,
   CFormInput,
   CFormFeedback,
-  CFormText,
   CRow,
   CCol,
   CSpinner,
-  CProgress,
-  CAlert,
 } from '@coreui/react'
-import {
-  Pill,
-  DollarSign,
-  CheckCircle,
-  Upload,
-  Calendar,
-  Package,
-  FileText,
-  AlertCircle,
-  X,
-} from 'lucide-react'
+import { Pill, DollarSign, Upload, Calendar, Package, FileText } from 'lucide-react'
 import Flatpickr from 'react-flatpickr'
 import 'flatpickr/dist/flatpickr.css'
 import 'flatpickr/dist/themes/material_blue.css'
@@ -238,111 +225,18 @@ const validateField = (key, value, allValues = {}) => {
   return null
 }
 
-// Estilos modernos
+// Estilos
 const styles = {
-  timeline: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '2rem',
+  fieldContainer: {
     position: 'relative',
-    padding: '2rem 0 1rem 0',
-  },
-  timelineContainer: {
-    position: 'relative',
-    width: '100%',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  timelineStep: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    position: 'relative',
-    zIndex: 3,
-  },
-  stepCircle: {
-    width: '50px',
-    height: '50px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '0.5rem',
-    transition: 'all 0.3s ease',
-    border: '3px solid',
-    background: 'white',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    position: 'relative',
-  },
-  stepCircleActive: {
-    backgroundColor: '#0d6efd',
-    borderColor: '#0d6efd',
-    color: 'white',
-    transform: 'scale(1.1)',
-    boxShadow: '0 4px 20px rgba(13, 110, 253, 0.4)',
-  },
-  stepCircleCompleted: {
-    backgroundColor: '#198754',
-    borderColor: '#198754',
-    color: 'white',
-  },
-  stepCircleInactive: {
-    backgroundColor: '#f8f9fa',
-    borderColor: '#dee2e6',
-    color: '#6c757d',
-  },
-  stepLabel: {
-    fontSize: '0.875rem',
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: '0.5rem',
-    color: '#495057',
-    maxWidth: '120px',
-  },
-  stepLabelActive: {
-    color: '#0d6efd',
-  },
-  progressLineContainer: {
-    position: 'absolute',
-    top: '25px',
-    left: '0',
-    right: '0',
-    top: '50%',
-    transform: 'translateY(-50%) translateY(4px)',
-    height: '4px',
-    backgroundColor: '#e9ecef',
-    borderRadius: '2px',
-    zIndex: 1,
-    overflow: 'hidden',
-  },
-  progressLine: {
-    height: '100%',
-    backgroundColor: '#0d6efd',
-    borderRadius: '2px',
-    transition: 'width 0.6s ease',
-    position: 'relative',
-  },
-  progressLineGlow: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: '20px',
-    height: '100%',
-    background: 'linear-gradient(90deg, transparent, rgba(13, 110, 253, 0.8), transparent)',
-    animation: 'pulse 2s infinite',
-  },
-  fieldGroup: {
-    marginBottom: '1.5rem',
   },
   fieldIcon: {
     position: 'absolute',
     left: '12px',
-    top: '50%',
-    transform: 'translateY(-50%)',
+    top: '12px', // Posición fija desde arriba
     color: '#6c757d',
     zIndex: 2,
+    pointerEvents: 'none',
   },
   fieldInput: {
     paddingLeft: '40px',
@@ -367,13 +261,6 @@ const styles = {
     borderColor: '#0d6efd',
     backgroundColor: '#f0f8ff',
   },
-  imageUploadActive: {
-    borderColor: '#0d6efd',
-    backgroundColor: '#e6f3ff',
-  },
-  alertContainer: {
-    marginBottom: '1rem',
-  },
 }
 
 const MedicationTimelineModal = ({ visible, setVisible, mode, data, apiEndpoint, onSuccess }) => {
@@ -384,13 +271,6 @@ const MedicationTimelineModal = ({ visible, setVisible, mode, data, apiEndpoint,
   const [imageUploading, setImageUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const { fetchImage } = useFetchImage()
-
-  // Calcular progreso de la línea
-  /*   const lineProgress = useMemo(() => {
-    if (step === 1) return 50 // Primer paso: 50% de la línea
-    if (step === 2) return 100 // Segundo paso: 100% de la línea
-    return 0
-  }, [step]) */
 
   // Resetear estado al abrir/cerrar modal
   useEffect(() => {
@@ -666,23 +546,29 @@ const MedicationTimelineModal = ({ visible, setVisible, mode, data, apiEndpoint,
 
     return (
       <CCol md={field.colSize} key={field.key} className="mb-3">
-        <CFormLabel className="fw-semibold">
-          {field.label}
-          {field.required && <span className="text-danger ms-1">*</span>}
-        </CFormLabel>
-        <div className="position-relative">
-          <Icon size={16} style={styles.fieldIcon} />
-          <CFormInput
-            type={field.type}
-            value={value}
-            placeholder={field.placeholder}
-            invalid={!!error}
-            onChange={(e) => handleFieldChange(field.key, e.target.value)}
-            style={styles.fieldInput}
-            min={field.min}
-            step={field.step}
-          />
-          {error && <CFormFeedback invalid>{error}</CFormFeedback>}
+        <div style={styles.fieldContainer}>
+          <CFormLabel className="fw-semibold">
+            {field.label}
+            {field.required && <span className="text-danger ms-1">*</span>}
+          </CFormLabel>
+          <div className="position-relative">
+            <Icon size={16} style={styles.fieldIcon} />
+            <CFormInput
+              type={field.type}
+              value={value}
+              placeholder={field.placeholder}
+              invalid={!!error}
+              onChange={(e) => handleFieldChange(field.key, e.target.value)}
+              style={styles.fieldInput}
+              min={field.min}
+              step={field.step}
+            />
+          </div>
+          {error && (
+            <CFormFeedback invalid className="d-block">
+              {error}
+            </CFormFeedback>
+          )}
         </div>
       </CCol>
     )
@@ -749,29 +635,31 @@ const MedicationTimelineModal = ({ visible, setVisible, mode, data, apiEndpoint,
   // Renderizar campo de fecha
   const renderDateField = () => (
     <CCol md={6} className="mb-3">
-      <CFormLabel className="fw-semibold">
-        Fecha de Vencimiento
-        <span className="text-danger ms-1">*</span>
-      </CFormLabel>
-      <div className="position-relative">
-        <Calendar size={16} style={styles.fieldIcon} />
-        <Flatpickr
-          data-enable-time={false}
-          value={form.fechaVencimiento}
-          options={{
-            dateFormat: 'Y-m-d',
-            minDate: 'today',
-            locale: 'es',
-          }}
-          onChange={([date]) => {
-            if (date) {
-              handleFieldChange('fechaVencimiento', date.toISOString().split('T')[0])
-            }
-          }}
-          className={`form-control ${errors.fechaVencimiento ? 'is-invalid' : ''}`}
-          style={styles.fieldInput}
-          placeholder="Selecciona una fecha"
-        />
+      <div style={styles.fieldContainer}>
+        <CFormLabel className="fw-semibold">
+          Fecha de Vencimiento
+          <span className="text-danger ms-1">*</span>
+        </CFormLabel>
+        <div className="position-relative">
+          <Calendar size={16} style={styles.fieldIcon} />
+          <Flatpickr
+            data-enable-time={false}
+            value={form.fechaVencimiento}
+            options={{
+              dateFormat: 'Y-m-d',
+              minDate: 'today',
+              locale: 'es',
+            }}
+            onChange={([date]) => {
+              if (date) {
+                handleFieldChange('fechaVencimiento', date.toISOString().split('T')[0])
+              }
+            }}
+            className={`form-control ${errors.fechaVencimiento ? 'is-invalid' : ''}`}
+            style={styles.fieldInput}
+            placeholder="Selecciona una fecha"
+          />
+        </div>
         {errors.fechaVencimiento && (
           <CFormFeedback invalid className="d-block">
             {errors.fechaVencimiento}
@@ -801,7 +689,7 @@ const MedicationTimelineModal = ({ visible, setVisible, mode, data, apiEndpoint,
 
         <CForm>
           {step === STEPS.BASIC_INFO && (
-            <div style={styles.fieldGroup}>
+            <div>
               <CRow>
                 {STEP_FIELDS[STEPS.BASIC_INFO].map(renderField)}
                 {renderImageUpload()}
@@ -810,7 +698,7 @@ const MedicationTimelineModal = ({ visible, setVisible, mode, data, apiEndpoint,
           )}
 
           {step === STEPS.STOCK_PRICING && (
-            <div style={styles.fieldGroup}>
+            <div>
               <CRow>
                 {STEP_FIELDS[STEPS.STOCK_PRICING].map(renderField)}
                 {renderDateField()}
