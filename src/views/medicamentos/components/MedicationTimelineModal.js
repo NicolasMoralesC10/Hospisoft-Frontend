@@ -19,6 +19,7 @@ import Flatpickr from 'react-flatpickr'
 import 'flatpickr/dist/flatpickr.css'
 import 'flatpickr/dist/themes/material_blue.css'
 import { apiFetch } from '../../../helpers/apiFetch.js'
+import { useFetchImage } from '../hooks/useFetchImage'
 
 const initialValues = {
   nombre: '',
@@ -47,12 +48,15 @@ const MedicationTimelineModal = ({ visible, setVisible, mode, data, apiEndpoint,
   const [form, setForm] = useState(initialValues)
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const { fetchImage } = useFetchImage()
 
-  useEffect(() => {
-    if (!visible) return
-    setStep(1)
-    setErrors({})
-    if (mode === 'edit' && data) {
+useEffect(() => {
+  if (!visible) return
+  setStep(1)
+  setErrors({})
+  if (mode === 'edit' && data) {
+    const loadImage = async () => {
+      const previewUrl = data.imagen ? await fetchImage(data.imagen) : ''
       setForm({
         nombre: data.nombre || '',
         codigo: data.codigo || '',
@@ -60,18 +64,19 @@ const MedicationTimelineModal = ({ visible, setVisible, mode, data, apiEndpoint,
         concentracion: data.concentracion || '',
         viaAdminist: data.viaAdminist || '',
         imagenFile: null,
-        imagenPreview: data.imagen
-          ? `http://127.0.0.1:3000/api/medicaments/image/${data.imagen}`
-          : '',
+        imagenPreview: previewUrl, // <- esta es la clave
         stockDisponible: data.stockDisponible || '',
         fechaVencimiento: data.fechaVencimiento?.split('T')[0] || '',
         precioCompra: data.precioCompra || '',
         precioVenta: data.precioVenta || '',
       })
-    } else {
-      setForm(initialValues)
     }
-  }, [visible, mode, data])
+    loadImage()
+  } else {
+    setForm(initialValues)
+  }
+}, [visible, mode, data])
+
 
   const validateStep = () => {
     const errs = {}

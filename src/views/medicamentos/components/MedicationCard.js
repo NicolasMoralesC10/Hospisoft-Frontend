@@ -1,6 +1,8 @@
 import React from 'react'
+import { useEffect, useState } from 'react'
 import { CCard, CCardHeader, CCardBody, CCardFooter, CImage, CButton, CBadge } from '@coreui/react'
 import { Info, Edit, Trash2 } from 'lucide-react'
+import { useFetchImage } from '../hooks/useFetchImage.js'
 
 const cardShadow = {
   boxShadow: '0 6px 32px 0 rgba(44,62,80,.12), 0 1.5px 6px 0 rgba(44,62,80,.06)',
@@ -30,9 +32,14 @@ const imgStyle = {
 
 const MedicationCard = ({ medication, onEdit, onDelete, onDetails }) => {
   const vencimiento = new Date(medication.fechaVencimiento).toLocaleDateString()
-  const imagenUrl = medication.imagen?.trim()
-    ? `http://127.0.0.1:3000/api/medicaments/image/${medication.imagen}`
-    : 'https://via.placeholder.com/400x225.png?text=Sin+Imagen'
+  const { fetchImage } = useFetchImage()
+  const [imageUrl, setImageUrl] = useState('')
+
+  useEffect(() => {
+    if (medication?.imagen) {
+      fetchImage(medication.imagen).then(setImageUrl)
+    }
+  }, [medication])
 
   const [isHover, setIsHover] = React.useState(false)
 
@@ -53,7 +60,7 @@ const MedicationCard = ({ medication, onEdit, onDelete, onDetails }) => {
     >
       {/* Imagen responsiva con aspecto 16:9 y fondo elegante */}
       <div style={imgContainerStyle}>
-        <CImage src={imagenUrl} alt={medication.nombre} style={imgStyle} />
+        <CImage src={imageUrl} alt={medication.nombre} style={imgStyle} />
         {/* Badge de stock */}
         <CBadge
           color={medication.stockDisponible > 0 ? 'success' : 'danger'}
@@ -63,7 +70,7 @@ const MedicationCard = ({ medication, onEdit, onDelete, onDetails }) => {
             top: '0.75rem',
             right: '0.75rem',
             padding: '0.4rem 0.9rem',
-            fontSize: '0.95rem',
+            fontSize: '0.75rem',
             zIndex: 10,
             boxShadow: '0 2px 8px rgba(44,62,80,.12)',
           }}
@@ -72,7 +79,7 @@ const MedicationCard = ({ medication, onEdit, onDelete, onDetails }) => {
         </CBadge>
       </div>
 
-      <CCardHeader className="bg-primary text-white d-flex justify-content-between align-items-center px-4 py-3">
+      <CCardHeader className="bg-dark text-white d-flex justify-content-between align-items-center px-4 py-3">
         <div className="d-flex flex-column">
           <span className="fs-5 fw-semibold text-truncate" title={medication.nombre}>
             {medication.nombre}
