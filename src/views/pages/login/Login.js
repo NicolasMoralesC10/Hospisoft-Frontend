@@ -36,9 +36,34 @@ const Login = () => {
       })
 
       login(data.token, data.user, data.rol)
-      navigate('/dashboard')
+      switch (data.rol) {
+        case 'superuser':
+          navigate('/dashboard')
+          break
+        case 'admin':
+          navigate('/dashboard')
+          break
+        case 'secretaria':
+          navigate('/citas')
+          break
+        case 'medico':
+          navigate('/citas')
+          break
+        case 'paciente':
+          navigate('/citas')
+          break
+        case 'dispensario':
+          navigate('/medicamentos')
+          break
+        default:
+          break
+      }
     } catch (err) {
-      setError(err.message || 'Error de conexión')
+      if (err.message === 'Bad Request') {
+        setError('Correo electronico no valido')
+      } else {
+        setError(err.message || 'Error de conexión')
+      }
     }
   }
 

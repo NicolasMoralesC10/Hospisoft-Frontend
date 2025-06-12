@@ -14,7 +14,7 @@ import { cilAccountLogout } from '@coreui/icons'
 import avatarImg from '../../assets/images/avatars/default-avatar.jpg'
 
 const UserDropdown = () => {
-  const { user, logout } = useAuth()
+  const { user, rol, logout } = useAuth()
   const [dropdownVisible, setDropdownVisible] = useState(false)
 
   const { colorMode } = useColorModes('coreui-free-react-admin-template-theme')
@@ -22,7 +22,29 @@ const UserDropdown = () => {
   if (!user) return null
 
   const nombreUsuario = user.nombre || user.username || 'Usuario'
-  const rolUsuario = user.rol || 'Rol no asignado'
+  let rolUsuario = rol || 'Rol no asignado'
+  switch (rolUsuario) {
+    case 'superuser':
+      rolUsuario = 'Super Usuario'
+      break
+    case 'admin':
+      rolUsuario = 'Administrador'
+      break
+    case 'secretaria':
+      rolUsuario = 'Secretaria'
+      break
+    case 'medico':
+      rolUsuario = 'Médico'
+      break
+    case 'paciente':
+      rolUsuario = 'Paciente'
+      break
+    case 'dispensario':
+      rolUsuario = 'Dispensario'
+      break
+    default:
+      break
+  }
   const avatarSrc = avatarImg
 
   const buttonColor = colorMode === 'dark' ? 'dark' : 'light'

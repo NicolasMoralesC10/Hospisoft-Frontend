@@ -27,18 +27,21 @@ const _nav = [
       color: 'info',
       text: 'NEW',
     },
+    roles: ['superuser', 'admin'],
   },
   {
     component: CNavItem,
     name: 'Medicos',
     to: '/medicos',
     icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
+    roles: ['superuser', 'admin'],
   },
   {
     component: CNavItem,
     name: 'Citas',
     to: '/citas',
     icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
+    roles: ['superuser', 'admin', 'secretaria', 'medico', 'paciente'],
   },
   /* {
     component: CNavTitle,
