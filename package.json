@@ -31,10 +31,13 @@
     "@fullcalendar/interaction": "^6.1.17",
     "@fullcalendar/react": "^6.1.17",
     "@popperjs/core": "^2.11.8",
+    "@react-pdf/renderer": "^4.3.0",
     "@tanstack/react-table": "^8.21.3",
     "chart.js": "^4.4.7",
     "classnames": "^2.5.1",
     "core-js": "^3.40.0",
+    "file-saver": "^2.0.5",
+    "jspdf": "^3.0.1",
     "lucide-react": "^0.510.0",
     "prop-types": "^15.8.1",
     "react": "^19.0.0",
@@ -44,7 +47,8 @@
     "react-select": "^5.10.1",
     "redux": "5.0.1",
     "simplebar-react": "^3.3.0",
-    "sweetalert2": "^11.21.0"
+    "sweetalert2": "^11.21.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
