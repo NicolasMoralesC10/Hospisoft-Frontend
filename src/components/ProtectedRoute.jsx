@@ -2,8 +2,8 @@ import React from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 
-const ProtectedRoute = ({ redirectPath = '/login' }) => {
-  const { token, loading } = useAuth()
+const ProtectedRoute = ({ allowedRoles = [], redirectPath = '/login', children }) => {
+  const { token, rol, loading } = useAuth()
 
   if (loading) {
     // Mientras se verifica el estado
@@ -15,8 +15,12 @@ const ProtectedRoute = ({ redirectPath = '/login' }) => {
     return <Navigate to={redirectPath} replace />
   }
 
-  // Si está autenticado, renderiza las rutas hijas
-  return <Outlet />
+  if (allowedRoles.length > 0 && !allowedRoles.includes(rol)) {
+    // <-- Verificar si el rol del usuario está en allowedRoles
+    return <Navigate to="/unauthorized" replace /> // Redirigir a una página de "no autorizado"
+  }
+
+  return children ? children : <Outlet /> // Renderizar children si se proporciona, o Outlet si no
 }
 
 export default ProtectedRoute

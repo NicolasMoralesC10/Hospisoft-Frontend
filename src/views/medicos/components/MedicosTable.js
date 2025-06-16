@@ -15,7 +15,6 @@ import {
   CButton,
   CBadge,
   CSpinner,
-  CAlert,
 } from '@coreui/react'
 import {
   useReactTable,
@@ -27,8 +26,12 @@ import {
 } from '@tanstack/react-table'
 
 import { apiFetch } from '../../../helpers/apiFetch.js'
+import ExcelIcon from '../../icons/svg/ExcelIcon'
+import PdfIcon from '../../icons/svg/PdfIcon'
+import { exportToExcel } from '../../../helpers/excelService'
+import { exportToPdf } from '../../../helpers/pdfService'
 
-// columnas de la tabla :: acessorKey es el nombre de la propiedad en el Json
+// Columnas para la tabla (para tanstack/react-table)
 const columns = [
   { accessorKey: 'nombre', header: 'Nombre' },
   { accessorKey: 'documento', header: 'Documento' },
@@ -84,6 +87,23 @@ const columns = [
   },
 ]
 
+// Columnas para exportación (puedes ajustar los campos y encabezados)
+const exportColumns = [
+  { key: 'nombre', header: 'Nombre' },
+  { key: 'documento', header: 'Documento' },
+  { key: 'telefono', header: 'Teléfono' },
+  { key: 'especialidad', header: 'Especialidad' },
+  { key: 'usuario', header: 'Usuario' },
+  { key: 'email', header: 'Email' },
+  { key: 'estado', header: 'Estado' },
+]
+
+const statusMap = {
+  0: 'Inactivo',
+  1: 'Activo',
+  2: 'Pendiente',
+}
+
 const MedicosTable = ({ apiEndpoint }) => {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -110,13 +130,7 @@ const MedicosTable = ({ apiEndpoint }) => {
     fetchMedicos()
   }, [apiEndpoint])
 
-  const handleCreate = ({ client, user }) => {
-    console.log('Cliente:', client)
-    console.log('Usuario:', user)
-  }
-
   const handleEdit = async (medico) => {
-    // spread operator: pasa las propiedades del objeto 'medico' directamente dentro de uno nuevo.
     setEditingMedico({ ...medico })
     setModalVisible(true)
   }
@@ -224,6 +238,33 @@ const MedicosTable = ({ apiEndpoint }) => {
 
   const rows = getRowModel().rows
 
+  // Prepara los datos para exportar (ajusta según tus necesidades)
+  const exportData = data.map((medico) => ({
+    nombre: medico.nombre,
+    documento: medico.documento,
+    telefono: medico.telefono,
+    especialidad: medico.especialidad,
+    usuario: medico.idUsuario?.username || 'N/A',
+    email: medico.idUsuario?.email || 'N/A',
+    estado: statusMap[medico.status] || 'Desconocido',
+  }))
+
+  const handleExportExcel = () => {
+    exportToExcel(exportData, {
+      fileName: 'medicos.xlsx',
+      columns: exportColumns,
+      sheetName: 'Médicos',
+    })
+  }
+
+  const handleExportPdf = () => {
+    exportToPdf(exportData, {
+      fileName: 'medicos.pdf',
+      title: 'Listado de Médicos',
+      columns: exportColumns,
+    })
+  }
+
   return (
     <>
       <CCard className="mb-4 shadow-sm">
@@ -240,24 +281,37 @@ const MedicosTable = ({ apiEndpoint }) => {
           </CButton>
         </CCardHeader>
         <CCardBody>
-          {/* Búsqueda global y select de filas */}
-          <div className="d-flex justify-content-between mb-2">
-            <input
-              className="form-control w-25"
-              placeholder="Buscar medico..."
-              onChange={(e) => setGlobalFilter(e.target.value)}
-            />
-            <select
-              className="form-select w-auto"
-              value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
-            >
-              {[5, 10, 20].map((size) => (
-                <option key={size} value={size}>
-                  {size} filas
-                </option>
-              ))}
-            </select>
+          {/* Búsqueda, select de filas y botones de exportación */}
+          <div className="d-flex justify-content-between mb-2 align-items-center flex-wrap gap-2">
+            <div className="d-flex align-items-center gap-2">
+              <input
+                className="form-control"
+                style={{ minWidth: 200 }}
+                placeholder="Buscar medico..."
+                onChange={(e) => setGlobalFilter(e.target.value)}
+              />
+              <select
+                className="form-select w-auto"
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+              >
+                {[5, 10, 20].map((size) => (
+                  <option key={size} value={size}>
+                    {size} filas
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="d-flex gap-2">
+              <CButton color="outline-success" className="text-white" onClick={handleExportExcel}>
+                <ExcelIcon className="me-2" />
+                Excel
+              </CButton>
+              <CButton color="outline-danger" className="text-white" onClick={handleExportPdf}>
+                <PdfIcon className="me-2" />
+                PDF
+              </CButton>
+            </div>
           </div>
 
           {/* Tabla */}

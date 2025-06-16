@@ -14,6 +14,7 @@ import {
   cilSpeedometer,
   cilUser,
   cilStar,
+  cilChart,
   cilUserFollow,
   cilMedicalCross,
 } from '@coreui/icons'
@@ -24,11 +25,8 @@ const _nav = [
     component: CNavItem,
     name: 'Dashboard',
     to: '/dashboard',
-    icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
-    badge: {
-      color: 'info',
-      text: 'NEW',
-    },
+    icon: <CIcon icon={cilChart} customClassName="nav-icon" />,
+    roles: ['superuser', 'admin'],
   },
   {
     component: CNavItem,
@@ -55,12 +53,14 @@ const _nav = [
     name: 'Medicos',
     to: '/medicos',
     icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
+    roles: ['superuser', 'admin'],
   },
   {
     component: CNavItem,
     name: 'Citas',
     to: '/citas',
     icon: <CIcon icon={cilNotes} customClassName="nav-icon" />,
+    roles: ['superuser', 'admin', 'secretaria', 'medico', 'paciente'],
   },
   /* {
     component: CNavTitle,
