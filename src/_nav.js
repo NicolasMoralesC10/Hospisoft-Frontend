@@ -33,20 +33,14 @@ const _nav = [
     name: 'Pacientes',
     to: '/pacientes',
     icon: <CIcon icon={cilUserFollow} customClassName="nav-icon" />,
-    /*     badge: {
-      color: 'info',
-      text: 'NEW',
-    }, */
+    roles: ['superuser', 'admin'],
   },
   {
     component: CNavItem,
     name: 'Medicamentos',
     to: '/medicamentos',
     icon: <CIcon icon={cilMedicalCross} customClassName="nav-icon" />,
-    /*     badge: {
-      color: 'info',
-      text: 'NEW',
-    }, */
+    roles: ['superuser', 'admin', 'dispensario'],
   },
   {
     component: CNavItem,
@@ -65,13 +59,14 @@ const _nav = [
   /* {
     component: CNavTitle,
     name: 'Theme',
-  },
+  },*/
   {
     component: CNavItem,
     name: 'Diagnosticos',
     to: '/diagnosticos',
     icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
-  },
+    roles: ['superuser', 'admin', 'medico'],
+  }, 
 ]
 
 export default _nav
