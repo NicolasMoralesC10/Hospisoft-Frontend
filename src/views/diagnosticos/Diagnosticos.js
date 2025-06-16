@@ -61,6 +61,7 @@ const VistaDiagnosticos = () => {
   // Estados para la funcionalidad
   const [documento, setDocumento] = useState('')
   const [diagnosticos, setDiagnosticos] = useState([])
+  const [showEditModal, setShowEditModal] = useState(false)
   const [selectedDiagnostic, setSelectedDiagnostic] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -187,6 +188,12 @@ const VistaDiagnosticos = () => {
   const endIndex = startIndex + itemsPerPage
   const currentItems = filteredAndSortedDiagnostics.slice(startIndex, endIndex)
 
+  const handleEditDiagnostic = (diagnostic) => {
+    setSelectedDiagnostic(diagnostic)
+    setShowEditModal(true)
+    setShowModal(false)
+  }
+
   // Función para buscar diagnósticos por documento
   const handleSearch = async () => {
     if (!documento.trim()) {
@@ -270,7 +277,7 @@ const VistaDiagnosticos = () => {
 
     switch (statusText?.toLowerCase()) {
       case 'activo':
-        return 'danger'
+        return 'success'
       case 'en seguimiento':
         return 'warning'
       case 'en tratamiento':
@@ -614,7 +621,9 @@ const VistaDiagnosticos = () => {
                           </CTableDataCell>
                           <CTableDataCell>
                             <div>
-                              <small className='text-primary'>{diagnostico.patient?.nombrePaciente || 'N/A'}</small>
+                              <small className="text-primary">
+                                {diagnostico.patient?.nombrePaciente || 'N/A'}
+                              </small>
                             </div>
                           </CTableDataCell>
                           <CTableDataCell>
@@ -742,768 +751,403 @@ const VistaDiagnosticos = () => {
         size="xl"
         className="diagnostic-modal"
       >
-        <CModalHeader className="border-0 pb-0">
+        <CModalHeader className="border-bottom">
           <div className="d-flex align-items-center justify-content-between w-100">
             <div className="d-flex align-items-center">
-              <div className="modal-icon-wrapper me-3">
-                <CIcon icon={cilMedicalCross} size="lg" className="text-white" />
+              <div className="modal-icon me-3">
+                <CIcon icon={cilMedicalCross} size="lg" />
               </div>
               <div>
-                <CModalTitle className="mb-1 fs-4 fw-bold text-dark">
-                  Detalles del Diagnóstico Médico
+                <CModalTitle className="h4 mb-1 text-dark fw-bold">
+                  Registro Médico - Diagnóstico
                 </CModalTitle>
                 {selectedDiagnostic && (
                   <small className="text-muted">
-                    ID: {selectedDiagnostic._id?.slice(-8) || 'N/A'}
+                    Expediente: {selectedDiagnostic._id?.slice(-8) || 'N/A'}
                   </small>
                 )}
               </div>
             </div>
-            <div className="d-flex align-items-center gap-2">
-              {selectedDiagnostic?.prioridad && (
-                <CBadge
-                  color={getPriorityBadgeColor(selectedDiagnostic.prioridad)}
-                  className="px-3 py-2 fs-6 fw-semibold priority-badge"
-                >
-                  {selectedDiagnostic.prioridad}
-                </CBadge>
-              )}
-            </div>
+            {selectedDiagnostic?.prioridad && (
+              <CBadge
+                color={getPriorityBadgeColor(selectedDiagnostic.prioridad)}
+                className="priority-badge"
+              >
+                {selectedDiagnostic.prioridad}
+              </CBadge>
+            )}
           </div>
         </CModalHeader>
 
-        <CModalBody className="px-4 py-3">
+        <CModalBody className="p-4">
           {selectedDiagnostic && (
             <div>
-              {/* Header Cards - Información Principal */}
-              <CRow className="mb-4">
-                <CCol lg={4} md={6} className="mb-3">
-                  <CCard className="h-100 border-0 info-card">
-                    <CCardBody className="p-3">
-                      <div className="d-flex align-items-center mb-2">
-                        <CIcon icon={cilUser} className="text-medical-primary me-2" />
-                        <h6 className="text-medical-primary mb-0 fw-semibold">Paciente</h6>
-                      </div>
-                      <p className="fs-5 fw-bold mb-1 text-dark">
+              {/* Información del Paciente */}
+              <div className="patient-info mb-4">
+                <CRow>
+                  <CCol md={4}>
+                    <div className="info-item">
+                      <label className="info-label">Paciente</label>
+                      <p className="info-value">
                         {selectedDiagnostic.patient?.nombrePaciente || 'N/A'}
                       </p>
-                      <small className="text-muted">
-                        <CIcon icon={cilCalendar} className="me-1" />
-                        {formatDate(selectedDiagnostic.fecha)}
-                      </small>
-                    </CCardBody>
-                  </CCard>
-                </CCol>
-
-                <CCol lg={4} md={6} className="mb-3">
-                  <CCard className="h-100 border-0 info-card">
-                    <CCardBody className="p-3">
-                      <div className="d-flex align-items-center mb-2">
-                        <CIcon icon={cilMedicalCross} className="text-medical-secondary me-2" />
-                        <h6 className="text-medical-secondary mb-0 fw-semibold">Médico Tratante</h6>
-                      </div>
-                      <p className="fs-5 fw-bold mb-0 text-dark">
+                    </div>
+                  </CCol>
+                  <CCol md={4}>
+                    <div className="info-item">
+                      <label className="info-label">Médico Tratante</label>
+                      <p className="info-value">
                         Dr.{' '}
                         {selectedDiagnostic.medico?.nombre ||
                           selectedDiagnostic.medicalId?.nombre ||
                           'N/A'}
                       </p>
-                    </CCardBody>
-                  </CCard>
-                </CCol>
+                    </div>
+                  </CCol>
+                  <CCol md={4}>
+                    <div className="info-item">
+                      <label className="info-label">Fecha</label>
+                      <p className="info-value">{formatDate(selectedDiagnostic.fecha)}</p>
+                    </div>
+                  </CCol>
+                </CRow>
+              </div>
 
-                <CCol lg={4} md={12} className="mb-3">
-                  <CCard className="h-100 border-0 info-card">
-                    <CCardBody className="p-3">
-                      <div className="d-flex align-items-center mb-2">
-                        <CIcon icon={cilNotes} className="text-medical-accent me-2" />
-                        <h6 className="text-medical-accent mb-0 fw-semibold">Motivo de Consulta</h6>
+              {/* Diagnósticos */}
+              <div className="section mb-4">
+                <h5 className="section-title">Diagnósticos</h5>
+                <div className="section-content">
+                  <div className="diagnosis-item primary">
+                    <strong>Principal:</strong> {selectedDiagnostic.diagPrincipal}
+                  </div>
+                  {selectedDiagnostic.diagSecundario?.length > 0 && (
+                    <div className="mt-2">
+                      <strong>Secundarios:</strong>
+                      <ul className="diagnosis-list">
+                        {selectedDiagnostic.diagSecundario.map((diag, idx) => (
+                          <li key={idx}>{diag}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Motivo de Consulta */}
+              <div className="section mb-4">
+                <h5 className="section-title">Motivo de Consulta</h5>
+                <div className="section-content">
+                  <p>{selectedDiagnostic.motivoConsulta}</p>
+                </div>
+              </div>
+
+              {/* Historia Clínica */}
+              {(selectedDiagnostic.historia || selectedDiagnostic.evoClinica) && (
+                <div className="section mb-4">
+                  <h5 className="section-title">Historia Clínica</h5>
+                  <div className="section-content">
+                    {selectedDiagnostic.historia && (
+                      <div className="mb-3">
+                        <h6 className="subsection-title">Antecedentes</h6>
+                        <p>{selectedDiagnostic.historia}</p>
                       </div>
-                      <p className="mb-0 text-dark fw-medium">
-                        {selectedDiagnostic.motivoConsulta}
-                      </p>
-                    </CCardBody>
-                  </CCard>
-                </CCol>
-              </CRow>
-
-              {/* Tabs Navigation */}
-              <CNav variant="pills" className="mb-4 nav-pills-medical">
-                <CNavItem>
-                  <CNavLink
-                    active={activeTab === 'diagnosticos'}
-                    onClick={() => setActiveTab('diagnosticos')}
-                    className="nav-link-medical"
-                  >
-                    <CIcon icon={cilClipboard} className="me-2" />
-                    Diagnósticos
-                  </CNavLink>
-                </CNavItem>
-
-                {(selectedDiagnostic.historia || selectedDiagnostic.evoClinica) && (
-                  <CNavItem>
-                    <CNavLink
-                      active={activeTab === 'historia'}
-                      onClick={() => setActiveTab('historia')}
-                      className="nav-link-medical"
-                    >
-                      <CIcon icon={cilDescription} className="me-2" />
-                      Historia Clínica
-                    </CNavLink>
-                  </CNavItem>
-                )}
-
-                {selectedDiagnostic.examenFisico && selectedDiagnostic.examenFisico.length > 0 && (
-                  <CNavItem>
-                    <CNavLink
-                      active={activeTab === 'examen'}
-                      onClick={() => setActiveTab('examen')}
-                      className="nav-link-medical"
-                    >
-                      <CIcon icon={cilHeart} className="me-2" />
-                      Examen Físico
-                    </CNavLink>
-                  </CNavItem>
-                )}
-
-                {selectedDiagnostic.medicamentos && selectedDiagnostic.medicamentos.length > 0 && (
-                  <CNavItem>
-                    <CNavLink
-                      active={activeTab === 'medicamentos'}
-                      onClick={() => setActiveTab('medicamentos')}
-                      className="nav-link-medical"
-                    >
-                      <CIcon icon={cilMedicalCross} className="me-2" />
-                      Prescripción
-                    </CNavLink>
-                  </CNavItem>
-                )}
-
-                {(selectedDiagnostic.planManejo || selectedDiagnostic.recomendaciones) && (
-                  <CNavItem>
-                    <CNavLink
-                      active={activeTab === 'plan'}
-                      onClick={() => setActiveTab('plan')}
-                      className="nav-link-medical"
-                    >
-                      <CIcon icon={cilTask} className="me-2" />
-                      Plan Terapéutico
-                    </CNavLink>
-                  </CNavItem>
-                )}
-              </CNav>
-
-              {/* Tab Content */}
-              <div className="tab-content-wrapper">
-                {/* Diagnósticos Tab */}
-                {activeTab === 'diagnosticos' && (
-                  <CCard className="border-0 content-card">
-                    <CCardBody className="p-4">
-                      <div className="diagnosis-section">
-                        <div className="mb-4">
-                          <div className="d-flex align-items-center mb-3">
-                            <div className="diagnosis-icon primary me-3">
-                              <CIcon icon={cilClipboard} />
-                            </div>
-                            <h5 className="fw-bold text-medical-primary mb-0">
-                              Diagnóstico Principal
-                            </h5>
-                          </div>
-                          <div className="diagnosis-card primary">
-                            <p className="fs-5 mb-0 fw-medium">
-                              {selectedDiagnostic.diagPrincipal}
-                            </p>
-                          </div>
-                        </div>
-
-                        {selectedDiagnostic.diagSecundario &&
-                          selectedDiagnostic.diagSecundario.length > 0 && (
-                            <div>
-                              <div className="d-flex align-items-center mb-3">
-                                <div className="diagnosis-icon secondary me-3">
-                                  <CIcon icon={cilList} />
-                                </div>
-                                <h5 className="fw-bold text-medical-secondary mb-0">
-                                  Diagnósticos Secundarios
-                                </h5>
-                              </div>
-                              <div className="secondary-diagnoses">
-                                {selectedDiagnostic.diagSecundario.map((diag, idx) => (
-                                  <div key={idx} className="diagnosis-card secondary mb-2">
-                                    <p className="mb-0 fw-medium">{diag}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                    )}
+                    {selectedDiagnostic.evoClinica && (
+                      <div>
+                        <h6 className="subsection-title">Evolución</h6>
+                        <p>{selectedDiagnostic.evoClinica}</p>
                       </div>
-                    </CCardBody>
-                  </CCard>
-                )}
+                    )}
+                  </div>
+                </div>
+              )}
 
-                {/* Historia Clínica Tab */}
-                {activeTab === 'historia' && (
-                  <CCard className="border-0 content-card">
-                    <CCardBody className="p-4">
-                      {selectedDiagnostic.historia && (
-                        <div className="mb-4">
-                          <h5 className="fw-bold text-medical-primary mb-3">
-                            <CIcon icon={cilDescription} className="me-2" />
-                            Historia Clínica
-                          </h5>
-                          <div className="content-box">
-                            <p className="mb-0 lh-lg">{selectedDiagnostic.historia}</p>
+              {/* Examen Físico */}
+              {selectedDiagnostic.examenFisico?.length > 0 && (
+                <div className="section mb-4">
+                  <h5 className="section-title">Examen Físico</h5>
+                  <div className="section-content">
+                    {selectedDiagnostic.examenFisico.map((examen, idx) => (
+                      <div key={idx}>
+                        <div className="vitals-grid mb-3">
+                          <div className="vital-item">
+                            <span className="vital-label">PA:</span>
+                            <span className="vital-value">{examen.presionArterial}</span>
+                          </div>
+                          <div className="vital-item">
+                            <span className="vital-label">FC:</span>
+                            <span className="vital-value">{examen.frecuenciaCardiaca}</span>
+                          </div>
+                          <div className="vital-item">
+                            <span className="vital-label">FR:</span>
+                            <span className="vital-value">{examen.frecuenciaRespiratoria}</span>
+                          </div>
+                          <div className="vital-item">
+                            <span className="vital-label">T°:</span>
+                            <span className="vital-value">{examen.temperatura}</span>
                           </div>
                         </div>
-                      )}
-
-                      {selectedDiagnostic.evoClinica && (
-                        <div>
-                          <h5 className="fw-bold text-medical-secondary mb-3">
-                            <CIcon icon={cilThumbUp} className="me-2" />
-                            Evolución Clínica
-                          </h5>
-                          <div className="content-box">
-                            <p className="mb-0 lh-lg">{selectedDiagnostic.evoClinica}</p>
+                        {examen.observaciones && (
+                          <div>
+                            <h6 className="subsection-title">Observaciones</h6>
+                            <p>{examen.observaciones}</p>
                           </div>
-                        </div>
-                      )}
-                    </CCardBody>
-                  </CCard>
-                )}
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-                {/* Examen Físico Tab */}
-                {activeTab === 'examen' && selectedDiagnostic.examenFisico && (
-                  <CCard className="border-0 content-card">
-                    <CCardBody className="p-4">
-                      <h5 className="fw-bold text-medical-primary mb-4">
-                        <CIcon icon={cilHeart} className="me-2" />
-                        Signos Vitales y Examen Físico
-                      </h5>
-                      {selectedDiagnostic.examenFisico.map((examen, idx) => (
-                        <div key={idx} className="exam-section mb-4">
-                          <div className="vital-signs-grid">
-                            <div className="vital-sign-card">
-                              <div className="vital-icon pressure">
-                                <CIcon icon={cilSpeedometer} />
-                              </div>
-                              <div>
-                                <small className="text-muted d-block">Presión Arterial</small>
-                                <strong className="fs-5">{examen.presionArterial}</strong>
-                              </div>
-                            </div>
-
-                            <div className="vital-sign-card">
-                              <div className="vital-icon heart">
-                                <CIcon icon={cilHeart} />
-                              </div>
-                              <div>
-                                <small className="text-muted d-block">Frecuencia Cardíaca</small>
-                                <strong className="fs-5">{examen.frecuenciaCardiaca}</strong>
-                              </div>
-                            </div>
-
-                            <div className="vital-sign-card">
-                              <div className="vital-icon respiratory">
-                                <CIcon icon={cilMediaPlay} />
-                              </div>
-                              <div>
-                                <small className="text-muted d-block">
-                                  Frecuencia Respiratoria
-                                </small>
-                                <strong className="fs-5">{examen.frecuenciaRespiratoria}</strong>
-                              </div>
-                            </div>
-
-                            <div className="vital-sign-card">
-                              <div className="vital-icon temperature">
-                                <span>°C</span>
-                              </div>
-                              <div>
-                                <small className="text-muted d-block">Temperatura</small>
-                                <strong className="fs-5">{examen.temperatura}</strong>
-                              </div>
-                            </div>
+              {/* Prescripción */}
+              {selectedDiagnostic.medicamentos?.length > 0 && (
+                <div className="section mb-4">
+                  <h5 className="section-title">Prescripción Médica</h5>
+                  <div className="section-content">
+                    <div className="medications-list">
+                      {selectedDiagnostic.medicamentos.map((med, idx) => (
+                        <div key={idx} className="medication-item">
+                          <div className="med-name">
+                            {med.nombre || 'Medicamento no especificado'}
                           </div>
-
-                          {examen.observaciones && (
-                            <div className="mt-3">
-                              <h6 className="fw-bold text-medical-secondary mb-2">
-                                Observaciones Clínicas
-                              </h6>
-                              <div className="content-box">
-                                <p className="mb-0">{examen.observaciones}</p>
-                              </div>
-                            </div>
-                          )}
+                          <div className="med-details">
+                            <span>Dosis: {med.dosis || 'N/A'}</span> |
+                            <span> Frecuencia: {med.frecuencia || 'N/A'}</span> |
+                            <span> Duración: {med.duracion || 'N/A'}</span>
+                          </div>
                         </div>
                       ))}
-                    </CCardBody>
-                  </CCard>
-                )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
-                {/* Medicamentos Tab */}
-                {activeTab === 'medicamentos' && selectedDiagnostic.medicamentos && (
-                  <CCard className="border-0 content-card">
-                    <CCardBody className="p-4">
-                      <h5 className="fw-bold text-medical-primary mb-4">
-                        <CIcon icon={cilMedicalCross} className="me-2" />
-                        Prescripción Médica
-                      </h5>
-                      <div className="medications-grid">
-                        {selectedDiagnostic.medicamentos.map((medicamento, idx) => (
-                          <div key={idx} className="medication-card">
-                            <div className="medication-header">
-                              <h6 className="fw-bold text-dark mb-1">
-                                {medicamento.nombre || 'Medicamento no especificado'}
-                              </h6>
-                              {medicamento.codigo && (
-                                <small className="text-muted">Código: {medicamento.codigo}</small>
-                              )}
-                            </div>
-                            <div className="medication-details">
-                              <div className="detail-item">
-                                <CIcon icon={cilMedicalCross} className="detail-icon" />
-                                <div>
-                                  <small className="text-muted">Dosis</small>
-                                  <p className="mb-0 fw-medium">{medicamento.dosis || 'N/A'}</p>
-                                </div>
-                              </div>
-                              <div className="detail-item">
-                                <CIcon icon={cilClock} className="detail-icon" />
-                                <div>
-                                  <small className="text-muted">Frecuencia</small>
-                                  <p className="mb-0 fw-medium">
-                                    {medicamento.frecuencia || 'N/A'}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="detail-item">
-                                <CIcon icon={cilCalendar} className="detail-icon" />
-                                <div>
-                                  <small className="text-muted">Duración</small>
-                                  <p className="mb-0 fw-medium">{medicamento.duracion || 'N/A'}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+              {/* Plan de Tratamiento */}
+              {(selectedDiagnostic.planManejo || selectedDiagnostic.recomendaciones) && (
+                <div className="section mb-4">
+                  <h5 className="section-title">Plan de Tratamiento</h5>
+                  <div className="section-content">
+                    {selectedDiagnostic.planManejo && (
+                      <div className="mb-3">
+                        <h6 className="subsection-title">Plan de Manejo</h6>
+                        <p>{selectedDiagnostic.planManejo}</p>
                       </div>
-                    </CCardBody>
-                  </CCard>
-                )}
+                    )}
+                    {selectedDiagnostic.recomendaciones && (
+                      <div>
+                        <h6 className="subsection-title">Recomendaciones</h6>
+                        <p>{selectedDiagnostic.recomendaciones}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
-                {/* Plan y Recomendaciones Tab */}
-                {activeTab === 'plan' && (
-                  <CCard className="border-0 content-card">
-                    <CCardBody className="p-4">
-                      {selectedDiagnostic.planManejo && (
-                        <div className="mb-4">
-                          <h5 className="fw-bold text-medical-primary mb-3">
-                            <CIcon icon={cilTask} className="me-2" />
-                            Plan de Tratamiento
-                          </h5>
-                          <div className="content-box">
-                            <p className="mb-0 lh-lg">{selectedDiagnostic.planManejo}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedDiagnostic.recomendaciones && (
-                        <div className="mb-4">
-                          <h5 className="fw-bold text-medical-secondary mb-3">
-                            <CIcon icon={cilBullhorn} className="me-2" />
-                            Recomendaciones Médicas
-                          </h5>
-                          <div className="content-box">
-                            <p className="mb-0 lh-lg">{selectedDiagnostic.recomendaciones}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedDiagnostic.observaciones && (
-                        <div className="mb-4">
-                          <h5 className="fw-bold text-medical-accent mb-3">
-                            <CIcon icon={cilNotes} className="me-2" />
-                            Observaciones Adicionales
-                          </h5>
-                          <div className="content-box">
-                            <p className="mb-0 lh-lg">{selectedDiagnostic.observaciones}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedDiagnostic.proximaCita && (
-                        <div className="next-appointment">
-                          <div className="d-flex align-items-center">
-                            <div className="appointment-icon me-3">
-                              <CIcon icon={cilCalendar} />
-                            </div>
-                            <div>
-                              <h6 className="fw-bold text-medical-primary mb-1">
-                                Próxima Cita Médica
-                              </h6>
-                              <p className="fs-5 fw-bold text-dark mb-0">
-                                {formatDate(selectedDiagnostic.proximaCita)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </CCardBody>
-                  </CCard>
-                )}
-              </div>
+              {/* Próxima Cita */}
+              {selectedDiagnostic.proximaCita && (
+                <div className="section mb-4">
+                  <h5 className="section-title">Seguimiento</h5>
+                  <div className="section-content">
+                    <p>
+                      <strong>Próxima cita:</strong> {formatDate(selectedDiagnostic.proximaCita)}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CModalBody>
 
-        <CModalFooter className="border-0 pt-0 bg-light">
-          <div className="d-flex justify-content-between w-100 align-items-center">
+        <CModalFooter className="border-top bg-light">
+          <div className="d-flex justify-content-between w-100">
             <div className="d-flex gap-2">
-              {selectedDiagnostic && selectedDiagnostic._id && (
-                <>
-                  <CButton
-                    color="primary"
-                    variant="outline"
-                    className="btn-medical"
-                    onClick={() => {
-                      console.log('Editar diagnóstico:', selectedDiagnostic._id)
-                    }}
-                  >
-                    <CIcon icon={cilNotes} className="me-2" />
-                    Editar
-                  </CButton>
-                  <CButton
-                    color="secondary"
-                    variant="outline"
-                    className="btn-medical"
-                    onClick={() => window.print()}
-                  >
-                    <CIcon icon={cilPrint} className="me-2" />
-                    Imprimir
-                  </CButton>
-                  <CButton
-                    color="info"
-                    variant="outline"
-                    className="btn-medical"
-                    onClick={() => {
-                      setShowModal(false)
-                    }}
-                  >
-                    <CIcon icon={cilHistory} className="me-2" />
-                    Historial
-                  </CButton>
-                </>
-              )}
+              <CButton
+                color="primary"
+                variant="outline"
+                onClick={() => handleEditDiagnostic(selectedDiagnostic)}
+              >
+                <CIcon icon={cilNotes} className="me-1" />
+                Editar
+              </CButton>
+              <CButton color="secondary" variant="outline" onClick={() => window.print()}>
+                <CIcon icon={cilPrint} className="me-1" />
+                Imprimir
+              </CButton>
             </div>
-
-            <CButton
-              color="secondary"
-              onClick={() => setShowModal(false)}
-              className="btn-close-medical"
-            >
-              <CIcon icon={cilX} className="me-2" />
+            <CButton color="secondary" onClick={() => setShowModal(false)}>
               Cerrar
             </CButton>
           </div>
         </CModalFooter>
 
-        {/* Estilos CSS profesionales para hospital */}
+        {/* Estilos CSS Profesionales */}
         <style jsx>{`
-          :root {
-            --medical-primary: #2c5aa0;
-            --medical-secondary: #34495e;
-            --medical-accent: #5a67d8;
-            --medical-success: #27ae60;
-            --medical-info: #3498db;
-            --medical-warning: #f39c12;
-            --medical-danger: #e74c3c;
-            --medical-light: #f8fafc;
-            --medical-border: #e2e8f0;
-            --medical-shadow: 0 2px 8px rgba(45, 90, 160, 0.1);
+          .diagnostic-modal {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
           }
 
-          .diagnostic-modal .modal-icon-wrapper {
-            width: 48px;
-            height: 48px;
-            background: var(--medical-primary);
-            border-radius: 8px;
+          .modal-icon {
+            width: 40px;
+            height: 40px;
+            background: #2c5aa0;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: white;
           }
 
-          .text-medical-primary {
-            color: var(--medical-primary) !important;
-          }
-          .text-medical-secondary {
-            color: var(--medical-secondary) !important;
-          }
-          .text-medical-accent {
-            color: var(--medical-accent) !important;
-          }
-
-          .info-card {
-            background: white;
-            box-shadow: var(--medical-shadow);
-            border: 1px solid var(--medical-border);
-            border-radius: 8px;
-            transition: all 0.2s ease;
-          }
-
-          .info-card:hover {
-            box-shadow: 0 4px 12px rgba(45, 90, 160, 0.15);
-          }
-
-          .content-card {
-            background: white;
-            box-shadow: var(--medical-shadow);
-            border: 1px solid var(--medical-border);
-            border-radius: 8px;
-          }
-
-          .status-badge,
           .priority-badge {
-            border-radius: 6px;
             font-size: 0.75rem;
-            letter-spacing: 0.5px;
+            font-weight: 600;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
           }
 
-          .nav-pills-medical .nav-link-medical {
+          .patient-info {
+            background: #f8f9fa;
             border-radius: 6px;
-            padding: 0.6rem 1.2rem;
-            margin-right: 0.5rem;
-            border: 1px solid var(--medical-border);
-            background: white;
-            color: var(--medical-secondary);
-            transition: all 0.2s ease;
-            font-weight: 500;
-          }
-
-          .nav-pills-medical .nav-link-medical:hover {
-            background: var(--medical-light);
-            border-color: var(--medical-primary);
-            color: var(--medical-primary);
-          }
-
-          .nav-pills-medical .nav-link-medical.active {
-            background: var(--medical-primary);
-            border-color: var(--medical-primary);
-            color: white;
-          }
-
-          .diagnosis-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-          }
-
-          .diagnosis-icon.primary {
-            background: var(--medical-primary);
-          }
-
-          .diagnosis-icon.secondary {
-            background: var(--medical-secondary);
-          }
-
-          .diagnosis-card {
-            padding: 1.2rem 1.5rem;
-            border-radius: 8px;
-            border-left: 4px solid;
-            background: white;
-            border: 1px solid var(--medical-border);
-            box-shadow: var(--medical-shadow);
-            transition: all 0.2s ease;
-          }
-
-          .diagnosis-card:hover {
-            box-shadow: 0 4px 12px rgba(45, 90, 160, 0.15);
-          }
-
-          .diagnosis-card.primary {
-            border-left-color: var(--medical-primary);
-          }
-
-          .diagnosis-card.secondary {
-            border-left-color: var(--medical-secondary);
-          }
-
-          .content-box {
-            background: var(--medical-light);
-            border-radius: 8px;
             padding: 1.5rem;
-            border: 1px solid var(--medical-border);
-            border-left: 4px solid var(--medical-primary);
+            border-left: 4px solid #2c5aa0;
           }
 
-          .vital-signs-grid {
+          .info-item {
+            margin-bottom: 0.5rem;
+          }
+
+          .info-label {
+            display: block;
+            font-size: 0.875rem;
+            color: #6c757d;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+          }
+
+          .info-value {
+            font-size: 1rem;
+            color: #212529;
+            font-weight: 600;
+            margin: 0;
+          }
+
+          .section {
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 1rem;
+          }
+
+          .section:last-child {
+            border-bottom: none;
+          }
+
+          .section-title {
+            color: #2c5aa0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+          }
+
+          .subsection-title {
+            color: #495057;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+          }
+
+          .section-content {
+            color: #495057;
+            line-height: 1.6;
+          }
+
+          .diagnosis-item.primary {
+            background: #e3f2fd;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border-left: 4px solid #2c5aa0;
+          }
+
+          .diagnosis-list {
+            margin: 0.5rem 0 0 1rem;
+            padding: 0;
+          }
+
+          .vitals-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 1rem;
-            margin-bottom: 1rem;
-          }
-
-          .vital-sign-card {
-            background: white;
-            border-radius: 8px;
+            background: #f8f9fa;
             padding: 1rem;
-            display: flex;
-            align-items: center;
-            box-shadow: var(--medical-shadow);
-            border: 1px solid var(--medical-border);
-            transition: all 0.2s ease;
+            border-radius: 4px;
           }
 
-          .vital-sign-card:hover {
-            box-shadow: 0 4px 12px rgba(45, 90, 160, 0.15);
+          .vital-item {
+            text-align: center;
           }
 
-          .vital-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-            color: white;
-            font-weight: bold;
-            font-size: 0.9rem;
+          .vital-label {
+            display: block;
+            font-size: 0.8rem;
+            color: #6c757d;
+            font-weight: 600;
           }
 
-          .vital-icon.pressure {
-            background: var(--medical-danger);
-          }
-          .vital-icon.heart {
-            background: var(--medical-primary);
-          }
-          .vital-icon.respiratory {
-            background: var(--medical-info);
-          }
-          .vital-icon.temperature {
-            background: var(--medical-warning);
+          .vital-value {
+            display: block;
+            font-size: 1.1rem;
+            color: #212529;
+            font-weight: 700;
           }
 
-          .medications-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1rem;
+          .medications-list {
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 1rem;
           }
 
-          .medication-card {
-            background: white;
-            border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: var(--medical-shadow);
-            border: 1px solid var(--medical-border);
-            transition: all 0.2s ease;
+          .medication-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e9ecef;
           }
 
-          .medication-card:hover {
-            box-shadow: 0 4px 12px rgba(45, 90, 160, 0.15);
+          .medication-item:last-child {
+            border-bottom: none;
           }
 
-          .medication-header {
-            border-bottom: 1px solid var(--medical-border);
-            padding-bottom: 0.75rem;
-            margin-bottom: 1rem;
+          .med-name {
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 0.25rem;
           }
 
-          .medication-details {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
+          .med-details {
+            font-size: 0.875rem;
+            color: #6c757d;
           }
 
-          .detail-item {
-            display: flex;
-            align-items: center;
-          }
-
-          .detail-icon {
-            margin-right: 0.75rem;
-            color: var(--medical-primary);
-          }
-
-          .next-appointment {
-            background: var(--medical-light);
-            border-radius: 8px;
-            padding: 1.5rem;
-            border: 1px solid var(--medical-border);
-          }
-
-          .appointment-icon {
-            width: 48px;
-            height: 48px;
-            background: var(--medical-primary);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-          }
-
-          .btn-medical {
-            border-radius: 6px;
-            padding: 0.5rem 1rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            border-width: 1px;
-          }
-
-          .btn-medical:hover {
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-          }
-
-          .btn-close-medical {
-            border-radius: 6px;
-            padding: 0.5rem 1.5rem;
-            font-weight: 500;
-            background: var(--medical-secondary);
-            border-color: var(--medical-secondary);
-            color: white;
-          }
-
-          .btn-close-medical:hover {
-            background: #2c3e50;
-            border-color: #2c3e50;
-          }
-
-          .tab-content-wrapper {
-            min-height: 300px;
+          .med-details span {
+            margin-right: 0.5rem;
           }
 
           @media (max-width: 768px) {
-            .vital-signs-grid {
-              grid-template-columns: 1fr;
+            .vitals-grid {
+              grid-template-columns: repeat(2, 1fr);
             }
 
-            .medications-grid {
-              grid-template-columns: 1fr;
-            }
-
-            .nav-pills-medical {
-              flex-wrap: wrap;
-            }
-
-            .nav-pills-medical .nav-link-medical {
-              margin-bottom: 0.5rem;
-              font-size: 0.875rem;
-              padding: 0.5rem 1rem;
+            .patient-info {
+              padding: 1rem;
             }
           }
 
           @media print {
-            .modal-icon-wrapper,
-            .btn-medical,
-            .btn-close-medical,
-            .nav-pills-medical {
+            .modal-icon,
+            .btn,
+            .modal-footer {
               display: none !important;
+            }
+
+            .section-title {
+              color: #000 !important;
             }
           }
         `}</style>
@@ -1515,6 +1159,18 @@ const VistaDiagnosticos = () => {
           setVisible={setShowCreateModal}
           mode="create"
           data={null}
+          apiEndpoint={API_URL}
+          onSuccess={handleRefreshList}
+          patientDocument={documento}
+        />
+      )}
+      {/* Modal para editar diagnóstico */}
+      {showEditModal && selectedDiagnostic && (
+        <DiagnosticTimelineModal
+          visible={showEditModal}
+          setVisible={setShowEditModal}
+          mode="edit"
+          data={selectedDiagnostic}
           apiEndpoint={API_URL}
           onSuccess={handleRefreshList}
           patientDocument={documento}

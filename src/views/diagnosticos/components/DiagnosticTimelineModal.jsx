@@ -382,13 +382,16 @@ const DiagnosticTimelineModal = ({ visible, setVisible, mode, apiEndpoint, data,
     }
 
     // Cargar todos los datos cuando se abre el modal
-    loadMedicamentos()
-    loadMedicos()
-    loadPacientes()
+    const initializeModal = async () => {
+      await Promise.all([loadMedicamentos(), loadMedicos(), loadPacientes()])
 
-    if (mode === 'edit' && data) {
-      loadEditData()
+      // Solo después de cargar los datos, cargar los datos de edición
+      if (mode === 'edit' && data) {
+        loadEditData()
+      }
     }
+
+    initializeModal()
   }, [visible, mode, data, loadMedicamentos, loadMedicos, loadPacientes])
 
   // Cargar datos para edición
@@ -412,7 +415,7 @@ const DiagnosticTimelineModal = ({ visible, setVisible, mode, apiEndpoint, data,
     } catch (error) {
       console.error('Error loading edit data:', error)
     }
-  }, [data])
+  }, [data]) 
 
   // Validar paso actual
   const validateCurrentStep = useCallback(() => {
@@ -1059,7 +1062,7 @@ const DiagnosticTimelineModal = ({ visible, setVisible, mode, apiEndpoint, data,
 
     setSubmitting(true)
     try {
-      const endpoint = mode === 'edit' ? `${apiEndpoint}/${data._id}` : `${apiEndpoint}/create`
+      const endpoint = mode === 'edit' ? `${apiEndpoint}/edit/${data._id}` : `${apiEndpoint}/create`
       const method = mode === 'edit' ? 'PUT' : 'POST'
 
       const response = await apiFetch(endpoint, {
