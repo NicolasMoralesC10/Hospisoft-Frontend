@@ -303,11 +303,17 @@ const MedicosTable = ({ apiEndpoint }) => {
               </select>
             </div>
             <div className="d-flex gap-2">
-              <CButton color="outline-success" className="text-white" onClick={handleExportExcel}>
+              <CButton
+                color="outline-success"
+                /* className="text-white" */ onClick={handleExportExcel}
+              >
                 <ExcelIcon className="me-2" />
                 Excel
               </CButton>
-              <CButton color="outline-danger" className="text-white" onClick={handleExportPdf}>
+              <CButton
+                color="outline-danger"
+                /* className="text-white" */ onClick={handleExportPdf}
+              >
                 <PdfIcon className="me-2" />
                 PDF
               </CButton>

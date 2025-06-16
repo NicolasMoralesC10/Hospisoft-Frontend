@@ -59,7 +59,7 @@ const LastCitasTable = ({ apiEndpoint }) => {
         <h4 style={{ margin: 0 }}>Últimas Citas</h4>
         <div style={{ display: 'flex', gap: '8px' }}>
           <CButton
-            className="text-white"
+            /* className="text-white" */
             color="outline-success"
             onClick={() =>
               exportToExcel(exportData, {
@@ -73,7 +73,7 @@ const LastCitasTable = ({ apiEndpoint }) => {
             Excel
           </CButton>
           <CButton
-            className="text-white"
+            /* className="text-white" */
             color="outline-danger"
             onClick={() =>
               exportToPdf(exportData, {

@@ -43,6 +43,7 @@
     "prop-types": "^15.8.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-flatpickr": "^4.0.10",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.1.5",
     "react-select": "^5.10.1",

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { UserRoundX, UserRoundPen } from 'lucide-react'
 import Swal from 'sweetalert2'
 import PacienteTimelineModal from './PacienteTimelineModal'
+import { apiFetch } from '../../../helpers/apiFetch.js'
 import {
   CCard,
   CCardHeader,
@@ -15,7 +16,6 @@ import {
   CButton,
   CBadge,
   CSpinner,
-  CAlert,
 } from '@coreui/react'
 import {
   useReactTable,
@@ -38,7 +38,7 @@ const columns = [
   },
   { accessorKey: 'epsPaciente', header: 'EPS' },
   { accessorKey: 'estadoCivil', header: 'Estado Civil' },
-  { accessorKey: 'sexo', header: 'Sexo' },
+  { accessorKey: 'idUsuario.email', header: 'correo' },
   { accessorKey: 'direccion', header: 'Dirección' },
   {
     accessorKey: 'status',
@@ -63,7 +63,10 @@ const columns = [
           size="sm"
           color="info"
           className="me-2 text-light rounded-pill"
-          onClick={() => console.log('Editar', row.original._id)}
+          onClick={() => {
+            console.log('Editar', row.original)
+            table.options.meta.handleEdit(row.original)
+          }}
         >
           <UserRoundPen />
         </CButton>
@@ -85,32 +88,30 @@ const PacientesTable = ({ apiEndpoint }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
+  const [editingPaciente, setEditingPaciente] = useState(null)
+
+  const fetchPacientes = async () => {
+    try {
+      const json = await apiFetch(apiEndpoint + 'patient/list')
+      setData(json.data || [])
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEdit = async (paciente) => {
+    // spread operator: pasa las propiedades del objeto 'Paciente' directamente dentro de uno nuevo.
+    setEditingPaciente({ ...paciente })
+    setModalVisible(true)
+  }
 
   // Fetch de datos
   useEffect(() => {
-    async function fetchPacientes() {
-      try {
-        const res = await fetch(apiEndpoint)
-        if (!res.ok) throw new Error(res.statusText)
-        const json = await res.json()
-        setData(json.data || [])
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
     fetchPacientes()
   }, [apiEndpoint])
 
-  const handleCreate = ({ client, user }) => {
-    // Aquí envías a tu API:
-    // POST /pacientes con client, luego POST /usuarios con user y relacionas ambos
-    console.log('Cliente:', client)
-    console.log('Usuario:', user)
-  }
-
-  // Función de eliminar
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: '¿Estás seguro?',
@@ -121,15 +122,12 @@ const PacientesTable = ({ apiEndpoint }) => {
       cancelButtonText: 'Cancelar',
     })
     if (result.isConfirmed) {
-      const apiEndpointDelete = apiEndpoint.replace('list', 'delet')
       try {
-        const res = await fetch(`${apiEndpointDelete}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        await apiFetch(apiEndpoint + 'patient/delet', {
+          method: 'PUT',
           body: JSON.stringify({ id }),
         })
-        if (!res.ok) throw new Error('Error al eliminar')
-        setData((prev) => prev.filter((p) => p._id !== id))
+        await fetchPacientes()
         Swal.fire('Eliminado!', 'El paciente ha sido eliminado.', 'success')
       } catch (err) {
         Swal.fire('Error', `No se pudo eliminar: ${err.message}`, 'error')
@@ -141,7 +139,7 @@ const PacientesTable = ({ apiEndpoint }) => {
   const table = useReactTable({
     data,
     columns,
-    meta: { handleDelete },
+    meta: { handleDelete, handleEdit },
     initialState: {
       pagination: { pageIndex: 0, pageSize: 5 },
       globalFilter: '',
@@ -184,7 +182,13 @@ const PacientesTable = ({ apiEndpoint }) => {
       <CCard className="mb-4 shadow-sm">
         <CCardHeader className="d-flex justify-content-between align-items-center bg-primary text-white">
           <strong>Pacientes</strong>
-          <CButton color="light" onClick={() => setModalVisible(true)}>
+          <CButton
+            color="light"
+            onClick={() => {
+              setModalVisible(true)
+              setEditingPaciente(null)
+            }}
+          >
             + Nuevo Paciente
           </CButton>
         </CCardHeader>
@@ -271,7 +275,10 @@ const PacientesTable = ({ apiEndpoint }) => {
       <PacienteTimelineModal
         visible={modalVisible}
         setVisible={setModalVisible}
-        onSubmit={handleCreate}
+        paciente={editingPaciente}
+        isEdit={!!editingPaciente}
+        apiEndpoint="http://127.0.0.1:3000/api/"
+        onSuccess={fetchPacientes}
       />
     </>
   )

@@ -112,11 +112,11 @@ const PieChart = ({ apiEndpoint }) => {
       >
         <h4 style={{ margin: 0 }}>Médicos con más consultas mensuales</h4>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <CButton className="text-white" color="outline-success" onClick={handleExportExcel}>
+          <CButton /* className="text-white" */ color="outline-success" onClick={handleExportExcel}>
             <ExcelIcon className="me-2" />
             Excel
           </CButton>
-          <CButton className="text-white" color="outline-danger" onClick={handleExportPdf}>
+          <CButton /* className="text-white" */ color="outline-danger" onClick={handleExportPdf}>
             <PdfIcon className="me-2" />
             PDF
           </CButton>

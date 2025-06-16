@@ -1,9 +1,11 @@
 import React from 'react'
 
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
-/* const Usuarios = React.lazy(() => import('./views/usuarios/Usuarios')) */
+const Pacientes = React.lazy(() => import('./views/pacientes/Pacientes'))
+const Medicamentos = React.lazy(() => import('./views/medicamentos/Medicamentos'))
 const Medicos = React.lazy(() => import('./views/medicos/Medicos'))
 const Citas = React.lazy(() => import('./views/citas/Citas'))
+const Diagnosticos = React.lazy(() => import('./views/diagnosticos/Diagnosticos'))
 const Colors = React.lazy(() => import('./views/theme/colors/Colors'))
 const Typography = React.lazy(() => import('./views/theme/typography/Typography'))
 
@@ -57,9 +59,11 @@ const Widgets = React.lazy(() => import('./views/widgets/Widgets'))
 const routes = [
   { path: '/', exact: true, name: 'Home' },
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
-  /* { path: '/usuarios', name: 'Usuarios', element: Usuarios }, */
+  { path: '/pacientes', name: 'Pacientes', element: Pacientes },
+  { path: '/medicamentos', name: 'Medicamentos', element: Medicamentos },
   { path: '/medicos', name: 'Medicos', element: Medicos },
   { path: '/citas', name: 'Citas', element: Citas },
+  { path: '/diagnosticos', name: 'Diagnosticos', element: Diagnosticos },
   { path: '/theme', name: 'Theme', element: Colors, exact: true },
   { path: '/theme/colors', name: 'Colors', element: Colors },
   { path: '/theme/typography', name: 'Typography', element: Typography },
