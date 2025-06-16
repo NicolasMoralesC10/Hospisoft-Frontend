@@ -7,6 +7,12 @@ import { exportToExcel } from '../../../helpers/excelService.js'
 import { exportToPdf } from '../../../helpers/pdfService.js'
 import apiFetch from '../../../helpers/apiFetch.js'
 
+// Define las columnas para exportar
+const columns = [
+  { key: 'name', header: 'Médico' },
+  { key: 'consultas', header: 'Consultas' },
+]
+
 const PieChart = ({ apiEndpoint }) => {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -29,14 +35,29 @@ const PieChart = ({ apiEndpoint }) => {
     fetchData()
     const interval = setInterval(fetchData, 5 * 60 * 1000) // actualizar cada 5 minutos
     return () => clearInterval(interval)
-  }, [])
+  }, [apiEndpoint])
+
+  // Prepara los datos para exportar (si necesitas formatear algún campo, hazlo aquí)
+  const exportData = data.map((item) => ({
+    ...item,
+    // Si necesitas formatear algún campo, hazlo aquí
+    // Ejemplo: consultas: Number(item.consultas),
+  }))
 
   const handleExportExcel = () => {
-    exportToExcel(data, 'medicos_consultas.xlsx')
+    exportToExcel(exportData, {
+      fileName: 'medicos_consultas.xlsx',
+      columns,
+      sheetName: 'Médicos con más consultas',
+    })
   }
 
   const handleExportPdf = () => {
-    exportToPdf(data, 'medicos_consultas.pdf')
+    exportToPdf(exportData, {
+      fileName: 'medicos_consultas.pdf',
+      title: 'Médicos con más consultas mensuales',
+      columns,
+    })
   }
 
   const chartData = {
@@ -56,20 +77,18 @@ const PieChart = ({ apiEndpoint }) => {
       legend: {
         position: 'right',
         labels: {
-          boxWidth: 20, // ancho del cuadro de color 'switch'
+          boxWidth: 20,
           generateLabels: (chart) => {
             const data = chart.data
             if (!data.labels.length) return []
-            return data.labels.map((label, i) => {
-              return {
-                text: `${label}`,
-                fillStyle: data.datasets[0].backgroundColor[i],
-                strokeStyle: 'white', // borde alrededor del cuadro
-                lineWidth: 2,
-                fontColor: 'white',
-                index: i,
-              }
-            })
+            return data.labels.map((label, i) => ({
+              text: `${label}`,
+              fillStyle: data.datasets[0].backgroundColor[i],
+              strokeStyle: 'white',
+              lineWidth: 2,
+              fontColor: 'white',
+              index: i,
+            }))
           },
         },
       },

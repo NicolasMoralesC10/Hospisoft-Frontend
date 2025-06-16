@@ -19,6 +19,13 @@ import { apiFetch } from '../../../helpers/apiFetch.js'
 import { exportToExcel } from '../../../helpers/excelService'
 import { exportToPdf } from '../../../helpers/pdfService.js'
 
+const columns = [
+  { key: 'pacienteNombre', header: 'Paciente' },
+  { key: 'medicoNombre', header: 'Médico' },
+  { key: 'fecha', header: 'Fecha' },
+  { key: 'estado', header: 'Estado' },
+]
+
 const LastCitasTable = ({ apiEndpoint }) => {
   const [citas, setCitas] = useState([])
 
@@ -34,6 +41,12 @@ const LastCitasTable = ({ apiEndpoint }) => {
     fetchCitas()
   }, [apiEndpoint])
 
+  // Prepara los datos para exportar (formatea la fecha)
+  const exportData = citas.map((cita) => ({
+    ...cita,
+    fecha: new Date(cita.fecha).toLocaleString(),
+  }))
+
   return (
     <CCard className="mb-4">
       <CCardHeader
@@ -48,12 +61,28 @@ const LastCitasTable = ({ apiEndpoint }) => {
           <CButton
             className="text-white"
             color="outline-success"
-            onClick={() => exportToExcel(citas)}
+            onClick={() =>
+              exportToExcel(exportData, {
+                fileName: 'ultimas_citas.xlsx',
+                columns,
+                sheetName: 'Últimas Citas',
+              })
+            }
           >
             <ExcelIcon className="me-2" />
             Excel
           </CButton>
-          <CButton className="text-white" color="outline-danger" onClick={() => exportToPdf(citas)}>
+          <CButton
+            className="text-white"
+            color="outline-danger"
+            onClick={() =>
+              exportToPdf(exportData, {
+                fileName: 'ultimas_citas.pdf',
+                title: 'Últimas Citas',
+                columns,
+              })
+            }
+          >
             <PdfIcon className="me-2" />
             PDF
           </CButton>
@@ -64,16 +93,17 @@ const LastCitasTable = ({ apiEndpoint }) => {
         <CTable striped hover responsive>
           <CTableHead>
             <CTableRow>
-              <CTableHeaderCell scope="col">Paciente</CTableHeaderCell>
-              <CTableHeaderCell scope="col">Médico</CTableHeaderCell>
-              <CTableHeaderCell scope="col">Fecha</CTableHeaderCell>
-              <CTableHeaderCell scope="col">Estado</CTableHeaderCell>
+              {columns.map((col) => (
+                <CTableHeaderCell key={col.key} scope="col">
+                  {col.header}
+                </CTableHeaderCell>
+              ))}
             </CTableRow>
           </CTableHead>
           <CTableBody>
             {citas.length === 0 ? (
               <CTableRow>
-                <CTableDataCell colSpan={4} className="text-center">
+                <CTableDataCell colSpan={columns.length} className="text-center">
                   No hay citas para mostrar
                 </CTableDataCell>
               </CTableRow>

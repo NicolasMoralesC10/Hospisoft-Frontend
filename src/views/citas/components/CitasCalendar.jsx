@@ -8,6 +8,11 @@ import esLocale from '@fullcalendar/core/locales/es'
 import CitaModal from './CitaModal'
 
 import { apiFetch } from '../../../helpers/apiFetch.js'
+import { exportToExcel } from '../../../helpers/excelService.js'
+import { exportToPdf } from '../../../helpers/pdfService.js'
+import ExcelIcon from '../../icons/svg/ExcelIcon.js'
+import PdfIcon from '../../icons/svg/PdfIcon.js'
+import { CButton } from '@coreui/react'
 
 const CitasCalendar = ({ apiEndpoint, userId, userRol }) => {
   const calendarRef = useRef(null)
@@ -22,18 +27,25 @@ const CitasCalendar = ({ apiEndpoint, userId, userRol }) => {
   // Estado para eventos (citas)
   const [eventos, setEventos] = useState([])
 
+  // Columnas para exportación
+  const exportColumns = [
+    { key: 'pacienteNombre', header: 'Paciente' },
+    { key: 'medicoNombre', header: 'Médico' },
+    { key: 'fecha', header: 'Fecha' },
+    { key: 'descripcion', header: 'Descripción' },
+    { key: 'status', header: 'Estado' },
+  ]
+
   // Cargar selects, pacientes y medicos
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Ejecuta ambas peticiones en paralelo
         if (!['medico', 'paciente'].includes(userRol)) {
           const [dataPacientes, dataMedicos] = await Promise.all([
             apiFetch('http://127.0.0.1:3000/api/patient/list'),
             apiFetch('http://127.0.0.1:3000/api/medico/list'),
           ])
 
-          // Validar y actualizar estados
           if (dataPacientes.estado && Array.isArray(dataPacientes.data)) {
             setPacientes(dataPacientes.data)
           } else {
@@ -48,7 +60,6 @@ const CitasCalendar = ({ apiEndpoint, userId, userRol }) => {
             console.error('Respuesta inesperada de médicos:', dataMedicos)
           }
         } else {
-          // Para roles 'medico' o 'paciente' no cargar datos
           setPacientes([])
           setMedicos([])
         }
@@ -60,7 +71,7 @@ const CitasCalendar = ({ apiEndpoint, userId, userRol }) => {
     }
 
     fetchData()
-  }, [])
+  }, [userRol])
 
   // Renderizar citas en el calendario
   const fetchEvents = async () => {
@@ -68,7 +79,7 @@ const CitasCalendar = ({ apiEndpoint, userId, userRol }) => {
       const response = await apiFetch(`${apiEndpoint}/list?rol=${userRol}&userId=${userId}`)
 
       if (response.estado && Array.isArray(response.data)) {
-        setEventos(response.data) // Eventos adaptados para FullCalendar desde el back
+        setEventos(response.data)
       } else {
         setEventos([])
         console.error('Respuesta inesperada de citas:', response)
@@ -81,7 +92,38 @@ const CitasCalendar = ({ apiEndpoint, userId, userRol }) => {
 
   useEffect(() => {
     fetchEvents()
-  }, [apiEndpoint])
+  }, [apiEndpoint, userRol, userId])
+
+  // Prepara los datos para exportar (formatear fechas y estado)
+  const exportData = eventos.map((evt) => ({
+    pacienteNombre: evt.extendedProps?.paciente?.nombrePaciente || '',
+    medicoNombre: evt.extendedProps?.medico?.nombre || '',
+    fecha: evt.start ? new Date(evt.start).toLocaleString() : '',
+    descripcion: evt.title || '',
+    status:
+      evt.extendedProps?.status === 1
+        ? 'Activa'
+        : evt.extendedProps?.status === 0
+          ? 'Cancelada'
+          : 'Desconocido',
+  }))
+
+  // Funciones para exportar
+  const handleExportExcel = () => {
+    exportToExcel(exportData, {
+      fileName: 'citas.xlsx',
+      columns: exportColumns,
+      sheetName: 'Citas',
+    })
+  }
+
+  const handleExportPdf = () => {
+    exportToPdf(exportData, {
+      fileName: 'citas.pdf',
+      title: 'Reporte de Citas',
+      columns: exportColumns,
+    })
+  }
 
   // Al hacer clic en una fecha para agregar cita
   const handleDateClick = (arg) => {
@@ -233,6 +275,20 @@ const CitasCalendar = ({ apiEndpoint, userId, userRol }) => {
 
   return (
     <>
+      {/* Botones de exportación */}
+      <div
+        style={{ marginBottom: '1rem', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}
+      >
+        <CButton color="outline-success" onClick={handleExportExcel}>
+          <ExcelIcon className="me-2" />
+          Excel
+        </CButton>
+        <CButton color="outline-danger" onClick={handleExportPdf}>
+          <PdfIcon className="me-2" />
+          PDF
+        </CButton>
+      </div>
+
       <FullCalendar
         ref={calendarRef}
         plugins={[dayGridPlugin, interactionPlugin]}

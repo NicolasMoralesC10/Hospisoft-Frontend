@@ -38,6 +38,7 @@
     "core-js": "^3.40.0",
     "file-saver": "^2.0.5",
     "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.510.0",
     "prop-types": "^15.8.1",
     "react": "^19.0.0",

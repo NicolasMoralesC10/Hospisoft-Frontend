@@ -1,47 +1,37 @@
 // src/helpers/pdfService.js
 import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 /**
- * Genera y descarga un PDF con una tabla de citas.
- * @param {Array} data - Array de objetos con las citas.
- * @param {string} fileName - Nombre del archivo PDF a descargar.
+ * Genera y descarga un PDF con una tabla de datos.
+ * @param {Array} data - Array de objetos con los datos.
+ * @param {Object} options - Opciones de exportación.
+ *   @param {string} options.fileName - Nombre del archivo PDF a descargar.
+ *   @param {string} options.title - Título del reporte.
+ *   @param {Array} options.columns - Array de objetos { key, header } para mapear columnas.
  */
-export const exportToPdf = (data, fileName = 'ultimas_citas.pdf') => {
+export const exportToPdf = (
+  data,
+  { fileName = 'reporte.pdf', title = 'Reporte', columns = [] },
+) => {
   const doc = new jsPDF()
-  const pageWidth = doc.internal.pageSize.getWidth()
 
+  // Título centrado
   doc.setFontSize(16)
-  doc.text('Últimas Citas', pageWidth / 2, 15, { align: 'center' })
+  doc.text(title, doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' })
 
-  doc.setFontSize(12)
-  const startY = 25
-  const rowHeight = 10
-  const colWidths = [50, 50, 40, 40]
-  const headers = ['Paciente', 'Médico', 'Fecha', 'Estado']
+  // Preparar columnas y filas para autoTable
+  const headers = columns.length > 0 ? columns.map((col) => col.header) : Object.keys(data[0] || {})
+  const keys = columns.length > 0 ? columns.map((col) => col.key) : Object.keys(data[0] || {})
+  const rows = data.map((item) => keys.map((key) => (item[key] !== undefined ? item[key] : '')))
 
-  // Dibujar encabezados
-  let x = 10
-  headers.forEach((header, i) => {
-    doc.text(header, x + 2, startY)
-    x += colWidths[i]
-  })
-
-  // Dibujar filas
-  let y = startY + 7
-  data.forEach((item) => {
-    let x = 10
-    doc.text(item.pacienteNombre || '', x + 2, y)
-    x += colWidths[0]
-    doc.text(item.medicoNombre || '', x + 2, y)
-    x += colWidths[1]
-    doc.text(new Date(item.fecha).toLocaleString(), x + 2, y)
-    x += colWidths[2]
-    doc.text(item.estado || '', x + 2, y)
-    y += rowHeight
-    if (y > 280) {
-      doc.addPage()
-      y = 20
-    }
+  autoTable(doc, {
+    head: [headers],
+    body: rows,
+    startY: 25,
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [41, 128, 185] }, // Azul
+    alternateRowStyles: { fillColor: [240, 240, 240] },
   })
 
   doc.save(fileName)
