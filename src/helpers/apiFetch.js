@@ -1,36 +1,36 @@
-// Obtener token JWT almacenado
+// helpers/apiFetch.js
+
 const getToken = () => localStorage.getItem('token')
 
 /**
- * Wrapper para fetch que incluye token JWT en headers y maneja errores.
- * @param {string} url - URL de la petición
- * @param {object} options - Opciones de fetch (method, headers, body, etc.)
- * @returns {Promise<object>} - Respuesta parseada en JSON
+ * Wrapper para fetch que incluye JWT y maneja respuestas JSON o binarios (como imágenes).
+ * @param {string} url
+ * @param {object} options
+ * @returns {Promise<object|Blob>}
  */
 export const apiFetch = async (url, options = {}) => {
   const token = getToken()
 
-  // Construir headers por defecto y combinar con headers pasados en options
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  }
+  const headers = { ...options.headers }
 
-  // Agregar 'Authorization' si hay token
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  // Configurar opciones finales para fetch
+  const isFormData = options.body instanceof FormData
+
+  // Solo agregar Content-Type si hay body y no es FormData
+  if (options.body && !isFormData) {
+    headers['Content-Type'] = 'application/json'
+  }
+
   const config = {
     ...options,
     headers,
   }
 
-  // Realizar la petición
   const response = await fetch(url, config)
 
-  // Manejar errores HTTP
   if (!response.ok) {
     let errorMessage = `Error ${response.status}`
     try {
@@ -43,8 +43,13 @@ export const apiFetch = async (url, options = {}) => {
     throw new Error(errorMessage)
   }
 
-  // Parsear y devolver JSON
-  return response.json()
+  const contentType = response.headers.get('content-type') || ''
+
+  if (contentType.includes('application/json')) {
+    return response.json()
+  }
+
+  return response.blob()
 }
 
 export default apiFetch

@@ -5,6 +5,7 @@ const Pacientes = React.lazy(() => import('./views/pacientes/Pacientes'))
 const Medicamentos = React.lazy(() => import('./views/medicamentos/Medicamentos'))
 const Medicos = React.lazy(() => import('./views/medicos/Medicos'))
 const Citas = React.lazy(() => import('./views/citas/Citas'))
+const Diagnosticos = React.lazy(() => import('./views/diagnosticos/Diagnosticos'))
 const Colors = React.lazy(() => import('./views/theme/colors/Colors'))
 const Typography = React.lazy(() => import('./views/theme/typography/Typography'))
 
@@ -62,6 +63,7 @@ const routes = [
   { path: '/medicamentos', name: 'Medicamentos', element: Medicamentos },
   { path: '/medicos', name: 'Medicos', element: Medicos },
   { path: '/citas', name: 'Citas', element: Citas },
+  { path: '/diagnosticos', name: 'Diagnosticos', element: Diagnosticos },
   { path: '/theme', name: 'Theme', element: Colors, exact: true },
   { path: '/theme/colors', name: 'Colors', element: Colors },
   { path: '/theme/typography', name: 'Typography', element: Typography },

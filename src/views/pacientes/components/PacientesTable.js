@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { UserRoundX, UserRoundPen } from 'lucide-react'
 import Swal from 'sweetalert2'
 import PacienteTimelineModal from './PacienteTimelineModal'
+import { apiFetch } from '../../../helpers/apiFetch.js'
 import {
   CCard,
   CCardHeader,

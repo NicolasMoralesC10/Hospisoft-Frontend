@@ -78,17 +78,17 @@ const CitasCalendar = ({ apiEndpoint, userId, userRol }) => {
     try {
       const response = await apiFetch(`${apiEndpoint}/list?rol=${userRol}&userId=${userId}`)
 
-      if (response.estado && Array.isArray(response.data)) {
-        setEventos(response.data)
-      } else {
+        if (response.estado && Array.isArray(response.data)) {
+          setEventos(response.data) // Eventos adaptados para FullCalendar desde el back
+        } else {
+          setEventos([])
+          console.error('Respuesta inesperada de citas:', response)
+        }
+      } catch (error) {
+        console.error('Error al cargar las citas:', error)
         setEventos([])
-        console.error('Respuesta inesperada de citas:', response)
       }
-    } catch (error) {
-      console.error('Error al cargar las citas:', error)
-      setEventos([])
     }
-  }
 
   useEffect(() => {
     fetchEvents()

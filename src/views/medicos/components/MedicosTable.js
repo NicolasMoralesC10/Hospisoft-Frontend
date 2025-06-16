@@ -31,7 +31,7 @@ import PdfIcon from '../../icons/svg/PdfIcon'
 import { exportToExcel } from '../../../helpers/excelService'
 import { exportToPdf } from '../../../helpers/pdfService'
 
-// Columnas para la tabla (para tanstack/react-table)
+// columnas de la tabla :: acessorKey es el nombre de la propiedad en el Json
 const columns = [
   { accessorKey: 'nombre', header: 'Nombre' },
   { accessorKey: 'documento', header: 'Documento' },
@@ -129,6 +129,11 @@ const MedicosTable = ({ apiEndpoint }) => {
   useEffect(() => {
     fetchMedicos()
   }, [apiEndpoint])
+
+  const handleCreate = ({ client, user }) => {
+    console.log('Cliente:', client)
+    console.log('Usuario:', user)
+  }
 
   const handleEdit = async (medico) => {
     setEditingMedico({ ...medico })
